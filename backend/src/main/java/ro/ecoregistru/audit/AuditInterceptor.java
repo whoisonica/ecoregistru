@@ -80,7 +80,11 @@ public class AuditInterceptor implements Interceptor {
             EnergyCarrierUsed.class,
             EnergyConsumption.class,
             EnergyDeclaration.class,
-            EnergySavingMeasure.class);
+            EnergySavingMeasure.class,
+            // Raportul anual de mediu (V86): răspunsurile, controalele și monitorizările le scrie numai omul.
+            EnvironmentalReport.class,
+            EnvironmentalInspection.class,
+            EnvironmentalMonitoring.class);
 
     /**
      * Câmpurile din care se compune eticheta, pe tip, în ordinea în care se citesc.
@@ -109,7 +113,10 @@ public class AuditInterceptor implements Interceptor {
             Map.entry(EnergyCarrierUsed.class, List.of("year", "carrier")),
             Map.entry(EnergyConsumption.class, List.of("year", "carrier", "month")),
             Map.entry(EnergyDeclaration.class, List.of("year")),
-            Map.entry(EnergySavingMeasure.class, List.of("position")));
+            Map.entry(EnergySavingMeasure.class, List.of("position")),
+            Map.entry(EnvironmentalReport.class, List.of("year")),
+            Map.entry(EnvironmentalInspection.class, List.of("position", "institution")),
+            Map.entry(EnvironmentalMonitoring.class, List.of("position", "factor")));
 
     /**
      * Ce nu se scrie niciodată ca modificare.

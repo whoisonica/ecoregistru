@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarClock,
   Factory,
+  FileText,
   FileUp,
   FolderArchive,
   Home,
@@ -21,7 +22,7 @@ import type { Role } from "@/auth/AuthContext";
 import type { CompanyType } from "@/lib/types";
 import { canImport, canManage, isMultiCompany } from "@/lib/roles";
 import { SCREEN_PATH, registersFor, screensFor, type MovementScreen } from "@/lib/movementScreens";
-import { AUDIT_FILE_TABS, CANTAR_TABS, DEADLINE_TABS, GENERATION_TABS, PARTNER_TABS, type ScreenTab } from "@/lib/screenTabs";
+import { AUDIT_FILE_TABS, CANTAR_TABS, DEADLINE_TABS, GENERATION_TABS, PARTNER_TABS, RAM_TABS, type ScreenTab } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 
 export interface NavEntry {
@@ -141,6 +142,14 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
     // Fișa de energie (Legea 121/2014, 30 iunie): intrare proprie din 05.10.2026, după Termene, unde
     // stă și rândul declarației. Orice tip de firmă consumă energie, deci apare la toate.
     { to: "/energie", label: strings.nav.energy, icon: Zap, keywords: strings.nav.kwEnergy },
+    // Raportul anual de mediu (V86, Andreea 09.10.2026): intrare proprie, lângă energie — alt raport anual.
+    {
+      to: "/raport-mediu",
+      label: strings.nav.environmentalReport,
+      icon: FileText,
+      keywords: strings.nav.kwEnvironmentalReport,
+      tabs: RAM_TABS,
+    },
     { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive, keywords: strings.nav.kwAuditFile, tabs: AUDIT_FILE_TABS },
     {
       to: "/parteneri",

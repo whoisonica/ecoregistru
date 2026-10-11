@@ -91,6 +91,12 @@ export function documentFor(d: Deadline): { to: string; label: string } | null {
   if (d.reportType === "ENERGY_ANNUAL") {
     return { to: `/energie?an=${reported}`, label: strings.deadlines.documentEnergy };
   }
+  if (d.reportType === "ENVIRONMENTAL_REPORT") {
+    return { to: `/raport-mediu?an=${reported}`, label: strings.deadlines.documentEnvironmentalReport };
+  }
+  if (d.reportType === "PERMIT_VISA") {
+    return { to: "/raport-mediu?tab=autorizatie", label: strings.deadlines.documentPermit };
+  }
   return null;
 }
 

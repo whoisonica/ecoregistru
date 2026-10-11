@@ -15,6 +15,7 @@ import { WeighingOperationsPage } from "@/pages/WeighingOperationsPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
 import { EnergyPage } from "@/pages/EnergyPage";
+import { EnvironmentalReportPage } from "@/pages/EnvironmentalReportPage";
 import { AuditFilePage } from "@/pages/AuditFilePage";
 import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
           <Route path="/energie" element={<AppShell><EnergyPage /></AppShell>} />
+          <Route path="/raport-mediu" element={<AppShell><EnvironmentalReportPage /></AppShell>} />
           {/* Adresa de până pe 05.10.2026, când fișa era subpagina Termenelor; `?an=` merge mai departe. */}
           <Route path="/termene/energie" element={<RedirectKeepingQuery to="/energie" />} />
           <Route path="/ambalaje" element={<AppShell><PackagingPage /></AppShell>} />

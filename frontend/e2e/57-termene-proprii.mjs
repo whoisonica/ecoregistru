@@ -23,6 +23,16 @@ const iso = (days) => {
 const ro = (s) => s.split("-").reverse().join(".");
 const row = (text) => page.locator('[data-testid="deadlines-todo"] tbody tr', { hasText: text });
 const dialog = () => page.locator('[role="dialog"]');
+/**
+ * „Mai multe acțiuni” pe rândul termenului: întâi rândul în ecran, apoi clicul. Meniul se închide la derulare, iar din
+ * 11.10.2026 (RAM-ul și viza pe Termene) rândul probei poate sta sub margine — clicul care derula singur închidea meniul.
+ */
+async function openRowMenu(text) {
+  const button = row(text).getByRole("button", { name: "Mai multe acțiuni" });
+  await button.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  await button.click();
+}
 
 await login(page, "admin");
 await page.goto(BASE + "/termene", { waitUntil: "networkidle" });
@@ -60,7 +70,7 @@ await page.keyboard.press("Escape");
 await dialog().waitFor({ state: "detached" }).catch(() => {});
 
 // (4) Modificarea, din meniul rândului.
-await row(`Zgomot P57 ${RUN}`).getByRole("button", { name: "Mai multe acțiuni" }).click();
+await openRowMenu(`Zgomot P57 ${RUN}`);
 await page.getByRole("menuitem", { name: "Editează" }).click();
 await dialog().waitFor();
 await page.fill("#cd-title", `Zgomot hală P57 ${RUN}`);
@@ -83,7 +93,7 @@ const r2 = await row(`Zgomot hală P57 ${RUN}`).innerText().catch(() => "");
 check("bifat, apare cel de peste un an", r2.includes(ro(nextIso)), r2.replace(/\s+/g, " "));
 
 // (6) Ștergerea întreabă și ia rândul.
-await row(`Zgomot hală P57 ${RUN}`).getByRole("button", { name: "Mai multe acțiuni" }).click();
+await openRowMenu(`Zgomot hală P57 ${RUN}`);
 await page.getByRole("menuitem", { name: "Șterge" }).click();
 await dialog().waitFor();
 check("întreabă cu numele termenului", (await dialog().innerText()).includes(`Zgomot hală P57 ${RUN}`));

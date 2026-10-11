@@ -1933,7 +1933,62 @@ export type ReportType =
   // V81 (Andreea, 29.09.2026): un termen pe care firma și-l pune singură — zgomot, apă, emisii.
   | "CUSTOM"
   // 30 iunie, pe EfEnClima.ro — declarația de consum de energie a anului anterior (V82).
-  | "ENERGY_ANNUAL";
+  | "ENERGY_ANNUAL"
+  // V86 (Andreea, 09.10.2026): raportul anual de mediu, pe ziua din autorizație (15 ianuarie, implicit),
+  // și cererea de viză anuală, cu 60 de zile înainte de aniversarea emiterii (Ordinul 1150/2020 art. 5).
+  | "ENVIRONMENTAL_REPORT"
+  | "PERMIT_VISA";
+
+/** Autorizația de mediu cum o tipărește RAM-ul; `visaComputed*` e ziua vizei socotită din `issuedOn`. */
+export interface EnvironmentalPermit {
+  number: string | null;
+  expiry: string | null;
+  issuer: string | null;
+  issuedOn: string | null;
+  revisedOn: string | null;
+  visaOn: string | null;
+  ramDueMonth: number;
+  ramDueDay: number;
+  visaDueMonth: number | null;
+  visaDueDay: number | null;
+  visaComputedMonth: number | null;
+  visaComputedDay: number | null;
+  copyTo: string | null;
+  administratorName: string | null;
+}
+
+export interface EnvironmentalInspection {
+  workPoint: string | null;
+  institution: string | null;
+  reportNumber: string | null;
+  reportDate: string | null;
+  measures: string | null;
+}
+
+export interface EnvironmentalMonitoring {
+  workPoint: string | null;
+  factor: string | null;
+  performedOn: string | null;
+  testReportNumber: string | null;
+  testReportDate: string | null;
+  result: string | null;
+}
+
+/** Raportul anual de mediu al unui an. Un răspuns lipsă e `null`, nu „Nu”. */
+export interface EnvironmentalReport {
+  year: number;
+  permit: EnvironmentalPermit;
+  incidents: boolean | null;
+  incidentsText: string | null;
+  complaints: boolean | null;
+  complaintsText: string | null;
+  inspected: boolean | null;
+  damage: boolean | null;
+  damageText: string | null;
+  otherRequirements: string | null;
+  inspections: EnvironmentalInspection[];
+  monitorings: EnvironmentalMonitoring[];
+}
 
 /** Cât de des revine un termen propriu; următoarea apariție se creează la bifare. */
 export type DeadlineRecurrence = "ONCE" | "MONTHLY" | "QUARTERLY" | "SEMIANNUAL" | "ANNUAL";

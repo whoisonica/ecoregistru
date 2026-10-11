@@ -59,6 +59,7 @@ const suites = [
   ["58-periculos-generator.mjs", "periculos la generator: fără rubricile Anexei 3, doar avizul"],
   ["59-cantitate-kg.mjs", "cantitatea în kg fără zecimale, în tone cel mult trei"],
   ["60-energie.mjs", "Energie: fișa, Termene, dosarul, Acasă"],
+  ["61-raport-mediu.mjs", "Raportul anual de mediu: anul, controale, monitorizări, autorizația, Termene, Word"],
 ];
 
 const only = process.argv[2];

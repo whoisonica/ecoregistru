@@ -164,6 +164,8 @@ public class PushNotifier {
             case APM_ANNUAL_APRIL -> "Raportarea anuală la APM (30 aprilie)";
             case APM_ANNUAL_MAY -> "Programul de prevenire a deșeurilor";
             case ENERGY_ANNUAL -> "Energie";
+            case ENVIRONMENTAL_REPORT -> "Raportul anual de mediu";
+            case PERMIT_VISA -> "Viza autorizației de mediu";
             case OTHER -> "Raportare";
             case CUSTOM -> "Termen propriu";
         };

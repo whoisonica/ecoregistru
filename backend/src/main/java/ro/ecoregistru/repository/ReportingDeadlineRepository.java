@@ -26,6 +26,10 @@ public interface ReportingDeadlineRepository extends JpaRepository<ReportingDead
     List<ReportingDeadline> findAllByCompany_IdAndSeriesIdAndStatusNotAndDueDateAfter(
             UUID companyId, UUID seriesId, DeadlineStatus status, LocalDate after);
 
+    /** The open deadlines of some types from a day on — the ones a changed due day has to move (RAM, visa). */
+    List<ReportingDeadline> findAllByCompany_IdAndReportTypeInAndStatusNotAndDueDateGreaterThanEqual(
+            UUID companyId, java.util.Collection<ReportType> types, DeadlineStatus status, LocalDate from);
+
     Optional<ReportingDeadline> findByCompany_IdAndReportTypeAndDueDate(UUID companyId, ReportType reportType,
                                                                         LocalDate dueDate);
 

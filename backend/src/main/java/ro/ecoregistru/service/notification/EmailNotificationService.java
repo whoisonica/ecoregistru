@@ -389,6 +389,8 @@ public class EmailNotificationService implements NotificationService {
             case APM_ANNUAL_MAY -> "Programul de prevenire și reducere a cantităților de deșeuri "
                     + "(anual, 31 mai) — la agenția județeană de mediu, cu progresul înregistrat";
             case ENERGY_ANNUAL -> "Declarația de consum de energie";
+            case ENVIRONMENTAL_REPORT -> "Raportul anual de mediu (RAM)";
+            case PERMIT_VISA -> "Cererea de viză anuală a autorizației de mediu";
             case OTHER -> "Raportare";
             case CUSTOM -> "Termen propriu";
         };

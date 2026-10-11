@@ -197,6 +197,47 @@ public class Company {
     @Column(name = "energy_contact_attested_on")
     LocalDate energyContactAttestedOn;
 
+    // ---- Raportul anual de mediu (V86) -------------------------------------------------------------------------
+
+    /** Who issued the environmental authorization, as the RAM's cover letter addresses it ("Către ..."). */
+    @Column(name = "environmental_auth_issuer")
+    String environmentalAuthIssuer;
+
+    /** The day the <em>initial</em> authorization was issued: the annual visa is counted from its day and month. */
+    @Column(name = "environmental_auth_issued_on")
+    LocalDate environmentalAuthIssuedOn;
+
+    @Column(name = "environmental_auth_revised_on")
+    LocalDate environmentalAuthRevisedOn;
+
+    /** The date of the last annual visa. */
+    @Column(name = "environmental_auth_visa_on")
+    LocalDate environmentalAuthVisaOn;
+
+    /** The RAM's due day, written in the authorization; 15 January until someone says otherwise. */
+    @Builder.Default
+    @Column(name = "ram_due_month", nullable = false)
+    int ramDueMonth = 1;
+
+    @Builder.Default
+    @Column(name = "ram_due_day", nullable = false)
+    int ramDueDay = 15;
+
+    /** A visa request day written by hand over the computed one; both null = 60 days before the issue anniversary. */
+    @Column(name = "visa_due_month")
+    Integer visaDueMonth;
+
+    @Column(name = "visa_due_day")
+    Integer visaDueDay;
+
+    /** Who else the RAM's cover letter names ("Spre știința ..."): the Guard, other agencies; empty = nobody. */
+    @Column(name = "ram_copy_to")
+    String ramCopyTo;
+
+    /** The administrator who signs the RAM. */
+    @Column(name = "administrator_name")
+    String administratorName;
+
     /** Doar modulele bifate, cu data înrolării. */
     public java.util.Map<ro.ecoregistru.enums.SiatdModule, LocalDate> siatdEnrolment() {
         var map = new java.util.EnumMap<ro.ecoregistru.enums.SiatdModule, LocalDate>(ro.ecoregistru.enums.SiatdModule.class);

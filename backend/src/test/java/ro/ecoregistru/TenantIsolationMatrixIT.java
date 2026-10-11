@@ -829,4 +829,41 @@ class TenantIsolationMatrixIT {
                 partnerId == null ? "" : ",\"partnerId\":\"" + partnerId + "\"",
                 generatorId == null ? "" : ",\"internalGeneratorId\":\"" + generatorId + "\"");
     }
+
+    /**
+     * Raportul anual de mediu (V86). Textul lui B ({@code Zgomot-Beta-7731}) e ales să nu apară din întâmplare;
+     * nici JSON-ul, nici documentul Word al lui A nu-l arată, nici cu antetul {@code X-Tenant-Id} al lui B, iar
+     * salvarea lui A nu atinge rândul lui B.
+     */
+    @Test
+    void theEnvironmentalReportOfAnotherTenantIsNeverReadAndNeverRewritten() throws Exception {
+        String year = String.valueOf(LocalDate.now().getYear() - 1);
+        String theirs = "{\"year\":%s,\"incidents\":true,\"incidentsText\":\"Zgomot-Beta-7731\",\"inspections\":[],"
+                .formatted(year) + "\"monitorings\":[{\"factor\":\"Zgomot-Beta-7731\"}]}";
+        mockMvc.perform(as(put("/api/v1/environmental-report"), b).contentType(MediaType.APPLICATION_JSON)
+                .content(theirs)).andExpect(status().isOk());
+        mockMvc.perform(as(get("/api/v1/environmental-report").param("year", year), b))
+                .andExpect(content().string(containsString("Zgomot-Beta-7731")));
+
+        mockMvc.perform(as(put("/api/v1/environmental-report"), a).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"year\":%s,\"incidents\":false}".formatted(year))).andExpect(status().isOk());
+        for (boolean spoof : new boolean[]{false, true}) {
+            var json = as(get("/api/v1/environmental-report").param("year", year), a);
+            var word = as(get("/api/v1/environmental-report/document").param("year", year), a);
+            if (spoof) {
+                json.header("X-Tenant-Id", b.company().getId().toString());
+                word.header("X-Tenant-Id", b.company().getId().toString());
+            }
+            mockMvc.perform(json).andExpect(status().isOk())
+                    .andExpect(content().string(not(containsString("Zgomot-Beta-7731"))));
+            byte[] body = mockMvc.perform(word).andExpect(status().isOk()).andReturn().getResponse()
+                    .getContentAsByteArray();
+            try (var doc = new org.apache.poi.xwpf.usermodel.XWPFDocument(new java.io.ByteArrayInputStream(body));
+                 var text = new org.apache.poi.xwpf.extractor.XWPFWordExtractor(doc)) {
+                assertThat(text.getText()).doesNotContain("Zgomot-Beta-7731");
+            }
+        }
+        mockMvc.perform(as(get("/api/v1/environmental-report").param("year", year), b))
+                .andExpect(content().string(containsString("Zgomot-Beta-7731")));
+    }
 }

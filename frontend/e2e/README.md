@@ -1,3 +1,21 @@
+🧭 **11.10.2026 — probele 19 și 57 aduse la zi după „Raport de mediu”**. **19:** firma cu depozit are acum unsprezece intrări în meniu, deci
+Setările poartă litera de rezervă „S” din `Layout.tsx`; proba cere „S” peste zece intrări și o cifră până la zece. **57:** RAM-ul și viza
+pe Termene împing rândul termenului propriu sub marginea ecranului la 1440×900; clicul pe „Mai multe acțiuni” derula singur pagina, iar
+meniul se închide la derulare (căzut la rularea completă, `element was detached`). Proba aduce acum rândul în ecran înainte de clic
+(`openRowMenu`). Rulate pe stiva de la proba 61: ambele trec; suita întreagă a avut înainte de reparații 2 căderi din 48, exact acestea.
+
+🌳 **11.10.2026 — proba 61 (`61-raport-mediu.mjs`), raportul anual de mediu (RAM, V86, Andreea 09.10)**. Meniul are „Raport de mediu”
+imediat după „Energie”, cu taburile „Anul”, „Controale”, „Monitorizări”, „Autorizația”. Pe `/raport-mediu?an=<AN-1>`: „Nu” la incidente,
+„Da” la reclamații (deschide rubrica textului), „Nu” la prejudiciu, salvare; „Da” la control + un control (Garda, 118, data, măsuri);
+o monitorizare (Zgomot, Z-0457); după reîncărcare toate trei sunt la locul lor. „Alte cerințe” vine precompletat pe un an
+nesalvat (AN-2). Autorizația: nr., emitent, emisă 20.12.2015, administrator → „Socotit: 21 octombrie” și termenul raportului 15
+ianuarie; pe Termene apar rândul RAM-ului (15.01, cu legătura spre raport) și al vizei (21.10). „Descarcă Word” dă un `.docx`. 1440×900
+fără derulare pe toate patru taburile, 375px fără derulare laterală, fără erori de consolă sau HTTP. La început golește anul prin API;
+la sfârșit pune autorizația demo la loc. ⚠️ Lasă în urmă anul AN-1 cu răspunsurile, un control și o monitorizare.
+Rulată pe o stivă proprie (backend :8086 pe `eco_energie_an_1110`, migrările până la V86; Vite :5178; `E2E_DB=eco_energie_an_1110`):
+trece toată. **Negativă:** cu monitorizările scoase din salvare (`EnvironmentalReportEditor.tsx`) cade exact „după reîncărcare,
+monitorizarea e acolo” (schimbare de probă, pusă la loc).
+
 ⚡ **11.10.2026 — proba 60, energia „Pe an” și suma combustibililor (V85, Andreea)**. Pe fișă, deasupra primului combustibil bifat stă
 rândul „Combustibili și carburanți” cu suma tep a lor, ca G11 pe Anexa 1 („?” cât lipsesc luni la oricare). Orice rubrică are sub nume
 „Pe an”: în locul celor douăsprezece luni apare o singură cifră („<rubrică>, tot anul”, la cărbune și la alți combustibili și tep-ul ei),

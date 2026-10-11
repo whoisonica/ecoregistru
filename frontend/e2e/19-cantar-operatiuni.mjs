@@ -31,15 +31,17 @@ const menu = await page.evaluate(() => {
     afterIesiri: links.findIndex((a) => a.getAttribute("href") === "/cantar") ===
       links.findIndex((a) => a.getAttribute("href") === "/iesiri") + 1,
     settingsKey: keyOf(settings),
+    count: links.length,
   };
 });
 check("firma cu depozit are „Cântar” în meniu", menu.hasCantar && /Cântar/.test(menu.label), menu.label);
 check("stă imediat după Ieșiri", menu.afterIesiri);
-// Cifrele ajung fix pentru zece intrări, și niciun tip de firmă nu mai are atâtea: „Evidențe" a
-// ieșit din meniu dimineața, „Ambalaje" după-amiaza (18.09.2026), amândouă fiindcă arătau aceleași
-// mișcări ca „Generare". Firma cu depozit are nouă, deci Setările poartă „9" — o cifră, nu litera
-// de rezervă, care rămâne în cod pentru ziua în care meniul trece iar de zece.
-check("Setările au o cifră, nu litera de rezervă", /^[0-9]$/.test(menu.settingsKey ?? ""), String(menu.settingsKey));
+// Cifrele ajung fix pentru zece intrări. Pe 18.09.2026 firma cu depozit avea nouă și Setările purtau „9”; cu
+// „Energie” (05.10) și „Raport de mediu” (11.10.2026) are unsprezece, deci Setările poartă litera de rezervă, „S”,
+// pe care `Layout.tsx` o ține exact pentru ziua asta. Un meniu de cel mult zece păstrează cifra.
+check(menu.count > 10 ? "peste zece intrări, Setările poartă „S”" : "Setările au o cifră, nu litera de rezervă",
+  menu.count > 10 ? menu.settingsKey === "S" : /^[0-9]$/.test(menu.settingsKey ?? ""),
+  `${menu.count} intrări, tasta ${menu.settingsKey}`);
 
 // ---------------------------------------------------------------- ECRANUL
 await page.goto(BASE + "/cantar", { waitUntil: "networkidle" });

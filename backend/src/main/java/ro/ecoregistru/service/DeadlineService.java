@@ -192,6 +192,8 @@ public class DeadlineService {
         packagingWasteDeadline(company).ifPresent(rules::add);
         rules.add(aprilDeadline(company));
         mayDeadline(company).ifPresent(rules::add);
+        environmentalReportDeadline(company).ifPresent(rules::add);
+        permitVisaDeadline(company).ifPresent(rules::add);
         return rules;
     }
 
@@ -355,6 +357,75 @@ public class DeadlineService {
             return Optional.empty();
         }
         return Optional.of(new Rule(ReportType.APM_ANNUAL_MAY, List.of(MonthDay.of(Month.MAY, 31)), due -> true));
+    }
+
+    /**
+     * The RAM (V86): on the day the company's authorization writes, 15 January by default. Only for a company with an
+     * environmental authorization — the same test as {@link #mayDeadline}.
+     */
+    private Optional<Rule> environmentalReportDeadline(Company company) {
+        if (!hasPermit(company)) {
+            return Optional.empty();
+        }
+        return Optional.of(new Rule(ReportType.ENVIRONMENTAL_REPORT,
+                List.of(MonthDay.of(company.getRamDueMonth(), company.getRamDueDay())), due -> true));
+    }
+
+    /** The visa request (V86): the company's own day, or the last day of the legal window. See {@link #visaDue}. */
+    private Optional<Rule> permitVisaDeadline(Company company) {
+        if (!hasPermit(company)) {
+            return Optional.empty();
+        }
+        return visaDue(company).map(day -> new Rule(ReportType.PERMIT_VISA, List.of(day), due -> true));
+    }
+
+    /**
+     * The day the annual visa request is due: the one written by hand, or else 60 days before the day and month the
+     * initial authorization was issued (Ordinul 1150/2020 art. 5 alin. (4)). Counted on a common year, so in a leap
+     * year a date after February comes one day early, never late. Empty when neither is known.
+     */
+    public static Optional<MonthDay> visaDue(Company company) {
+        if (company.getVisaDueMonth() != null && company.getVisaDueDay() != null) {
+            return Optional.of(MonthDay.of(company.getVisaDueMonth(), company.getVisaDueDay()));
+        }
+        return computedVisaDue(company.getEnvironmentalAuthIssuedOn());
+    }
+
+    /** 60 days before the anniversary of {@code issued}, on a common year; empty without a date. */
+    public static Optional<MonthDay> computedVisaDue(LocalDate issued) {
+        if (issued == null) {
+            return Optional.empty();
+        }
+        // 29 February is issued once in four years; its anniversary in a common year is 28 February.
+        LocalDate anniversary = MonthDay.from(issued).equals(MonthDay.of(Month.FEBRUARY, 29))
+                ? LocalDate.of(2025, 2, 28) : MonthDay.from(issued).atYear(2025);
+        return Optional.of(MonthDay.from(anniversary.minusDays(VISA_DAYS_BEFORE)));
+    }
+
+    /** Ordinul 1150/2020 art. 5 alin. (4): „de minimum 60 de zile înainte”. */
+    public static final int VISA_DAYS_BEFORE = 60;
+
+    private static boolean hasPermit(Company company) {
+        String permit = company.getEnvironmentalAuthNumber();
+        return permit != null && !permit.isBlank();
+    }
+
+    /**
+     * After the authorization or one of its due days changed: the open RAM and visa deadlines from today on are dropped
+     * and generated again on the new days. Those already ticked stay — they are the company's history.
+     */
+    @Transactional
+    public void reschedulePermitDeadlines(Company company) {
+        LocalDate today = today();
+        List<ReportingDeadline> open = deadlineRepository
+                .findAllByCompany_IdAndReportTypeInAndStatusNotAndDueDateGreaterThanEqual(company.getId(),
+                        List.of(ReportType.ENVIRONMENTAL_REPORT, ReportType.PERMIT_VISA), DeadlineStatus.DONE, today);
+        deadlineRepository.deleteAll(open);
+        deadlineRepository.flush();
+        environmentalReportDeadline(company)
+                .ifPresent(r -> ensureNext(company, r.type(), r.days(), today, r.owed()));
+        permitVisaDeadline(company)
+                .ifPresent(r -> ensureNext(company, r.type(), r.days(), today, r.owed()));
     }
 
     @Transactional

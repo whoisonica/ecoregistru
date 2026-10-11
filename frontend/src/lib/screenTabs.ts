@@ -42,6 +42,14 @@ export const CANTAR_TABS: ScreenTab[] = [
 ];
 
 /** Dosarul de control: deșeurile (pagina de azi, implicit) și energia (Legea 121/2014). */
+/** Raportul anual de mediu (V86): trei taburi pe anul ales, unul al firmei (autorizația și termenele ei). */
+export const RAM_TABS: ScreenTab[] = [
+  { id: "", label: strings.environmentalReport.tabYear },
+  { id: "controale", label: strings.environmentalReport.tabInspections },
+  { id: "monitorizari", label: strings.environmentalReport.tabMonitorings },
+  { id: "autorizatie", label: strings.environmentalReport.tabPermit },
+];
+
 export const AUDIT_FILE_TABS: ScreenTab[] = [
   { id: "", label: strings.energy.tabWaste },
   { id: "energie", label: strings.energy.tabEnergy },

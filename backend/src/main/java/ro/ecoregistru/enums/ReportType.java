@@ -165,6 +165,23 @@ public enum ReportType {
      */
     ENERGY_ANNUAL,
 
+    /**
+     * The raport anual de mediu (RAM), for the previous calendar year. No act gives it a date: Ordinul 1150/2020
+     * art. 5 alin. (1) lit. b) asks for it with the annual visa request, at the authority that issued the
+     * authorization, and the authorization itself writes when it is due. The day is the company's
+     * ({@code ram_due_month/day}), 15 January until someone changes it (the specialist's practice; owner, 11.10.2026).
+     * Generated only for a company with an environmental authorization number.
+     */
+    ENVIRONMENTAL_REPORT,
+
+    /**
+     * The request for the annual visa of the environmental authorization — Ordinul 1150/2020 art. 5 alin. (4):
+     * between 90 and 60 days before the day and month the <em>initial</em> authorization was issued, even after a
+     * revision. The due day is the last one, 60 days before; a company can write its own day over it. Generated only
+     * when one of the two is known.
+     */
+    PERMIT_VISA,
+
     OTHER,
 
     /**
