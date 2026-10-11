@@ -2,11 +2,12 @@ import { useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { useSaveEnergyCell } from "@/hooks/useEnergy";
 import { apiErrorMessage } from "@/lib/api";
-import { ENERGY_CARRIERS } from "@/lib/energy";
+import { ENERGY_CARRIERS, FUEL_CARRIERS, WHOLE_YEAR } from "@/lib/energy";
 import { strings } from "@/lib/strings";
 import type { EnergyCarrier, EnergySheet } from "@/lib/types";
 import { formatDecimal } from "@/lib/units";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -43,6 +44,9 @@ const keyOf = (carrier: EnergyCarrier, month: number, field: Field) => `${carrie
  * Tabelul anului: un rând pe rubrică bifată, douăsprezece luni, „Total an” și „tep”. Celula se
  * salvează la ieșirea din ea; golită, se șterge (lipsa rândului = necompletat, nu 0). La cărbune și
  * la alți combustibili, sub cantitate stă tep-ul, scris de om.
+ *
+ * <p>O rubrică se poate trece și „Pe an” (Andreea, 11.10.2026): o singură celulă, luna 0, în locul
+ * celor douăsprezece. Combustibilii au deasupra lor rândul cu suma, ca pe Anexa 1.
  */
 export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; canWrite: boolean }) {
   const save = useSaveEnergyCell();
@@ -67,6 +71,8 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
    * tep-ul vechi la loc. Celulele diferite nu se așteaptă între ele.
    */
   const queues = useRef(new Map<string, Promise<void>>());
+  /** Rubricile trecute pe „Pe an” înainte să aibă cifra anului: modul ține atunci de ecran, nu de server. */
+  const [byYear, setByYear] = useState<Partial<Record<EnergyCarrier, boolean>>>({});
 
   const setDraft = (update: (prev: Record<string, string>) => Record<string, string>) => {
     draftRef.current = update(draftRef.current);
@@ -181,11 +187,16 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
   function cellInput(carrier: EnergyCarrier, month: number, field: Field, byHand: boolean) {
     // Cine doar citește vede cifrele, nu câmpuri stinse.
     if (!canWrite) {
-      return <span className="block h-8 w-[3.5rem] px-1.5 text-right leading-8">{valueOf(carrier, month, field)}</span>;
+      return (
+        <span className={cn("block h-8 px-1.5 text-right leading-8", month === WHOLE_YEAR ? "w-[7rem]" : "w-[3.5rem]")}>
+          {valueOf(carrier, month, field)}
+        </span>
+      );
     }
     const key = keyOf(carrier, month, field);
     const name = t.carrier[carrier];
-    const monthName = strings.months[month - 1].toLowerCase();
+    const monthName = month === WHOLE_YEAR ? t.wholeYear : strings.months[month - 1].toLowerCase();
+    const width = month === WHOLE_YEAR ? "w-[7rem]" : "w-[3.5rem]";
     const error = errors[key];
     // Fără cantitate, tep-ul n-are ce însoți: celula se șterge cu totul.
     const tepWithoutQuantity = field === "t" && valueOf(carrier, month, "q").trim() === "";
@@ -210,10 +221,10 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
             });
           }}
           onBlur={() => commit(carrier, month, field, byHand)}
-          className={cn("h-8 w-[3.5rem] px-1.5 text-right", error && "border-state-bad")}
+          className={cn("h-8 px-1.5 text-right", width, error && "border-state-bad")}
         />
         {error && (
-          <p role="alert" className="mt-0.5 max-w-[3.5rem] text-[0.6875rem] leading-tight text-state-bad-text">
+          <p role="alert" className={cn("mt-0.5 text-[0.6875rem] leading-tight text-state-bad-text", width.replace("w-", "max-w-"))}>
             {error}
           </p>
         )}
@@ -222,6 +233,37 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
   }
 
   const totalKnown = sheet.totals.every((tot) => tot.tep != null);
+
+  /** Rubrica are cifra anului pe server (sau tocmai salvată): atunci e „Pe an”, orice ar zice ecranul. */
+  const hasWholeYear = (carrier: EnergyCarrier) => baseOf(carrier, WHOLE_YEAR).quantity != null;
+  const isByYear = (carrier: EnergyCarrier) => hasWholeYear(carrier) || byYear[carrier] === true;
+
+  /** Înapoi la luni: cifra anului se șterge, ca lunile să se adune din nou. */
+  async function backToMonths(carrier: EnergyCarrier) {
+    const qKey = keyOf(carrier, WHOLE_YEAR, "q");
+    const tKey = keyOf(carrier, WHOLE_YEAR, "t");
+    if (hasWholeYear(carrier)) {
+      try {
+        await save.mutateAsync({ year: sheet.year, carrier, month: WHOLE_YEAR, quantity: null });
+      } catch (err) {
+        setError(qKey, apiErrorMessage(err, t.cellError));
+        return;
+      }
+      knownRef.current = { ...knownRef.current, [`${carrier}-${WHOLE_YEAR}`]: { quantity: null, tep: null } };
+      setKnownState(knownRef.current);
+    }
+    dropDrafts([qKey, tKey]);
+    setError(qKey, null);
+    setError(tKey, null);
+    setByYear((prev) => ({ ...prev, [carrier]: false }));
+  }
+
+  // Suma combustibililor, ca G11 pe Anexă: necunoscută cât lipsesc luni la oricare dintre ei.
+  const fuels = sheet.totals.filter((tot) => FUEL_CARRIERS.includes(tot.carrier));
+  const fuelsTep = fuels.every((tot) => tot.tep != null)
+    ? fuels.reduce((sum, tot) => sum + (tot.tep ?? 0), 0)
+    : null;
+  const firstFuel = sheet.carriers.find((c) => FUEL_CARRIERS.includes(c));
 
   return (
     <section className="mt-4">
@@ -244,7 +286,23 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
             const byHand = meta?.coefficient == null;
             const total = sheet.totals.find((tot) => tot.carrier === carrier);
             const tip = CARRIER_TIP[carrier];
-            return (
+            const yearly = isByYear(carrier);
+            return [
+              carrier === firstFuel && (
+                <TR key="fuels">
+                  <TD colSpan={13} className="py-1 font-semibold leading-tight">
+                    {t.fuelsTotal}
+                    <span className="ml-1 font-mono text-[0.6875rem] font-normal text-content-subtle">{t.colTep}</span>
+                    <span className="ml-1 align-middle">
+                      <Tooltip content={t.fuelsTotalHint}>
+                        <Info className="h-3.5 w-3.5 text-content-subtle" aria-label={t.fuelsTotalHint} />
+                      </Tooltip>
+                    </span>
+                  </TD>
+                  <TD className="py-1" />
+                  <TD className="whitespace-nowrap py-1 text-right font-mono font-semibold">{figure(fuelsTep)}</TD>
+                </TR>
+              ),
               <TR key={carrier}>
                 {/* Unitatea pe același rând cu numele: pe un rând separat, unsprezece rubrici împingeau
                     pagina peste 900px (măsurat, 04.10.2026). */}
@@ -261,17 +319,43 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
                       </Tooltip>
                     </span>
                   )}
+                  {canWrite && (
+                    <div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="-ml-2 h-6 px-2 text-xs font-normal text-content-subtle"
+                        onClick={() =>
+                          yearly ? void backToMonths(carrier) : setByYear((prev) => ({ ...prev, [carrier]: true }))
+                        }
+                      >
+                        {yearly ? t.byMonth : t.byYear}
+                      </Button>
+                    </div>
+                  )}
                 </TD>
-                {MONTHS.map((m) => (
-                  <TD key={m} className={cn("px-0.5 py-1 align-top", future(m) && "opacity-60")}>
-                    {cellInput(carrier, m, "q", byHand)}
-                    {byHand && <div className="mt-0.5">{cellInput(carrier, m, "t", byHand)}</div>}
+                {yearly ? (
+                  <TD colSpan={12} className="px-0.5 py-1 align-top">
+                    <div className="flex items-start gap-2">
+                      <div>
+                        {cellInput(carrier, WHOLE_YEAR, "q", byHand)}
+                        {byHand && <div className="mt-0.5">{cellInput(carrier, WHOLE_YEAR, "t", byHand)}</div>}
+                      </div>
+                      <span className="text-xs leading-8 text-content-subtle">{t.wholeYearNote}</span>
+                    </div>
                   </TD>
-                ))}
+                ) : (
+                  MONTHS.map((m) => (
+                    <TD key={m} className={cn("px-0.5 py-1 align-top", future(m) && "opacity-60")}>
+                      {cellInput(carrier, m, "q", byHand)}
+                      {byHand && <div className="mt-0.5">{cellInput(carrier, m, "t", byHand)}</div>}
+                    </TD>
+                  ))
+                )}
                 <TD className="whitespace-nowrap py-1 text-right font-mono">{figure(total?.quantity)}</TD>
                 <TD className="whitespace-nowrap py-1 text-right font-mono">{figure(total?.tep)}</TD>
-              </TR>
-            );
+              </TR>,
+            ];
           })}
         </TBody>
       </Table>

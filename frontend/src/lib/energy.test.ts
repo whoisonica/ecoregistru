@@ -25,6 +25,17 @@ test("cărbunele cu cantitate și fără tep nu face luna completă", () => {
   assert.equal(monthComplete(ok, 4), false);
 });
 
+test("o rubrică trecută pe tot anul e completă în orice lună; lunile ei nu mai contează", () => {
+  const s = sheet({
+    carriers: ["ELECTRICITY", "DIESEL"],
+    cells: [cell("ELECTRICITY", 3, 5), cell("DIESEL", 0, 120)],
+  });
+  assert.equal(monthComplete(s, 3), true);
+  assert.equal(monthComplete(s, 4), false);
+  const coal = sheet({ carriers: ["COAL"], cells: [cell("COAL", 0, 3), cell("COAL", 5, 1, 0.5)] });
+  assert.equal(monthComplete(coal, 5), false);
+});
+
 test("fără rubrici, acțiunea cere rubricile", () => {
   const a = energyAction(sheet({}), new Date(2026, 9, 4));
   assert.equal(a?.title, "Spuneți ce energie folosește firma");

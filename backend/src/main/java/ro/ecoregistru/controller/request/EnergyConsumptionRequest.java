@@ -9,11 +9,11 @@ import ro.ecoregistru.enums.EnergyCarrier;
 
 import java.math.BigDecimal;
 
-/** One cell of the year: a carrier in a month. A null quantity deletes the cell. */
+/** One cell of the year: a carrier in a month, or in the whole year as month 0. A null quantity deletes the cell. */
 public record EnergyConsumptionRequest(
         @NotNull Integer year,
         @NotNull EnergyCarrier carrier,
-        @NotNull @Min(1) @Max(12) Integer month,
+        @NotNull @Min(0) @Max(12) Integer month,
         @PositiveOrZero @Digits(integer = 11, fraction = 3) BigDecimal quantity,
         @PositiveOrZero @Digits(integer = 11, fraction = 4) BigDecimal tep
 ) {}

@@ -1,3 +1,13 @@
+⚡ **11.10.2026 — proba 60, energia „Pe an” și suma combustibililor (V85, Andreea)**. Pe fișă, deasupra primului combustibil bifat stă
+rândul „Combustibili și carburanți” cu suma tep a lor, ca G11 pe Anexa 1 („?” cât lipsesc luni la oricare). Orice rubrică are sub nume
+„Pe an”: în locul celor douăsprezece luni apare o singură cifră („<rubrică>, tot anul”, la cărbune și la alți combustibili și tep-ul ei),
+salvată ca luna 0; lunile rămân în bază, dar nu se mai adună. „Pe luni” șterge cifra anului și aduce lunile înapoi. Proba numără acum
+rândurile rubricilor fără rândul sumei; noile verificări: sumă „?” fără ianuarie la cărbune, 6,000 cu el; cărbunele „Pe an” 20 cu tep 9
+dă „Total an” 20,000 și suma 9,000, fără câmpuri lunare; „Pe luni” aduce înapoi 6,000. Curățenia de la început trece rubricile rămase
+„Pe an” înapoi pe luni. Rulată pe o stivă proprie (backend :8086 pe `eco_energie_an_1110`, bază nouă cu migrările până la V85; Vite :5178;
+`E2E_DB=eco_energie_an_1110`): trece toată. **Negativă:** cu rândul sumei scos din `EnergyMonthsTable.tsx` cade „„Combustibili și
+carburanți” stă deasupra cărbunelui” (schimbare de probă, pusă la loc).
+
 📅 **05.10.2026 — plata anuală (V84): probele 30 și 31 cu facturare anuală**. Adminul alege „Facturare: Lunar / Anual” în dialogul
 abonamentului, pe pagina firmei și la „Client nou”; la „Anual” scrie prețul pe an („Preț pe an (lei)”, obligatoriu), „Preț personalizat” nu
 se mai arată, iar factura are un singur rând („Generator, abonament anual”). **31** — o a doua firmă, „Proba 31 Anual <număr>”, făcută din

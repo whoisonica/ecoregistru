@@ -171,6 +171,54 @@ class EnergyIT {
     }
 
     @Test
+    void aWholeYearCellIsTheCarriersYearAndItsMonthsStepAside() throws Exception {
+        tick("ELECTRICITY", "DIESEL");
+        for (int m = 1; m <= 12; m++) {
+            cell("ELECTRICITY", m, "10", "null").andExpect(status().isOk());
+        }
+        cell("DIESEL", 3, "5", "null").andExpect(status().isOk());
+        sheet(YEAR).andExpect(jsonPath("$.totals[1].quantity", nullValue()))
+                .andExpect(jsonPath("$.monthsComplete", is(1)));
+
+        // Month 0 is the whole year: March stays in the table but no longer counts.
+        cell("DIESEL", 0, "2", "null").andExpect(status().isOk());
+        sheet(YEAR).andExpect(jsonPath("$.cells", hasSize(14)))
+                .andExpect(jsonPath("$.totals[1].carrier", is("DIESEL")))
+                .andExpect(jsonPath("$.totals[1].quantity", is(2.0)))
+                .andExpect(jsonPath("$.totals[1].tep", is(2.03)))
+                .andExpect(jsonPath("$.totalTep", is(12.35)))
+                .andExpect(jsonPath("$.knownTep", is(12.35)))
+                .andExpect(jsonPath("$.monthsComplete", is(12)));
+        try (var wb = annex(YEAR)) {
+            assertThat(annexCell(wb, "E16").getNumericCellValue()).isEqualTo(2.0);
+        }
+
+        // Deleted, the months count again.
+        cell("DIESEL", 0, "null", "null").andExpect(status().isOk());
+        sheet(YEAR).andExpect(jsonPath("$.totals[1].quantity", nullValue()))
+                .andExpect(jsonPath("$.monthsComplete", is(1)));
+    }
+
+    @Test
+    void aWholeYearOfCoalNeedsItsTep() throws Exception {
+        tick("COAL");
+        cell("COAL", 0, "3", "null").andExpect(status().isOk());
+        sheet(YEAR).andExpect(jsonPath("$.totals[0].tep", nullValue()))
+                .andExpect(jsonPath("$.monthsComplete", is(0)));
+        cell("COAL", 0, "3", "2.5").andExpect(status().isOk());
+        sheet(YEAR).andExpect(jsonPath("$.totals[0].quantity", is(3.0)))
+                .andExpect(jsonPath("$.totals[0].tep", is(2.5)))
+                .andExpect(jsonPath("$.monthsComplete", is(12)));
+    }
+
+    @Test
+    void aMonthOutsideZeroToTwelveIs422() throws Exception {
+        tick("ELECTRICITY");
+        cell("ELECTRICITY", -1, "1", "null").andExpect(status().isUnprocessableEntity());
+        cell("ELECTRICITY", 13, "1", "null").andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
     void aNullQuantityDeletesTheCell() throws Exception {
         tick("ELECTRICITY");
         cell("ELECTRICITY", 3, "5", "null").andExpect(jsonPath("$.cells", hasSize(1)));

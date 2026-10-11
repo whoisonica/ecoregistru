@@ -29,10 +29,28 @@ export function previousMonth(today: Date): { year: number; month: number } {
   return m === 0 ? { year: today.getFullYear() - 1, month: 12 } : { year: today.getFullYear(), month: m };
 }
 
-/** Aceeași regulă ca serverul: fiecare rubrică bifată are cantitate, iar cărbunele/alții și tep. */
+/** Luna celulei care ține tot anul: cât există, ea e anul rubricii, iar lunile nu se mai adună. */
+export const WHOLE_YEAR = 0;
+
+/** Rubricile de sub „Combustibili și carburanți” pe Anexă. */
+export const FUEL_CARRIERS: EnergyCarrier[] = [
+  "NATURAL_GAS",
+  "FUEL_OIL",
+  "LIGHT_FUEL_OIL",
+  "PETROL",
+  "DIESEL",
+  "COAL",
+  "OTHER_FUEL",
+];
+
+/**
+ * Aceeași regulă ca serverul: fiecare rubrică bifată are cantitate, iar cărbunele/alții și tep. O rubrică trecută pe
+ * tot anul se citește din celula anului, în orice lună.
+ */
 export function monthComplete(sheet: EnergySheet, month: number): boolean {
   return sheet.carriers.every((carrier) => {
-    const cell = sheet.cells.find((c) => c.carrier === carrier && c.month === month);
+    const wholeYear = sheet.cells.find((c) => c.carrier === carrier && c.month === WHOLE_YEAR);
+    const cell = wholeYear ?? sheet.cells.find((c) => c.carrier === carrier && c.month === month);
     const byHand = ENERGY_CARRIERS.find((c) => c.id === carrier)?.coefficient == null;
     return cell != null && cell.quantity != null && (!byHand || cell.tep != null);
   });

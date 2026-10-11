@@ -9,6 +9,8 @@
 // schimbă și fișa din AN-1 (rubricile sunt ale anului, decizia F3 din 05.10.2026).
 // (0) din 05.10.2026: meniul n-are intrarea „Energie” imediat după „Termene”, sau vechea adresă /termene/energie?an=
 // nu mai duce la fișă cu anul păstrat.
+// (2b) din 11.10.2026 (Andreea): rândul „Combustibili și carburanți” lipsește de deasupra combustibililor sau nu e suma
+// lor tep („?” cât lipsesc luni); (3b) „Pe an” nu ține rubrica dintr-o singură cifră, sau „Pe luni” nu aduce lunile înapoi.
 // (4) din 05.10.2026: „Anexa 1” și „Declarația” sunt meniuri — „Deschide PDF” deschide un tab nou cu adresa `blob:` și
 // nu descarcă nimic, „Descarcă Excel” / „Descarcă Word” descarcă tot .xlsx / .docx; peste 1000 tep meniul Anexei 1 e stins.
 // Date-robustă: AN vine din ceas; documentele se completează pe AN-1; Termene se verifică pe termenul viitor (anul AN).
@@ -30,6 +32,7 @@ const MONTHS = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "i
 const ELEC = "Energie electrică";
 const COAL = "Cărbune";
 const GAS = "Gaze naturale";
+const FUELS = "Combustibili și carburanți";
 // Singurul 4xx iertat: un 401 la intrare (POST /auth/login). Consola îl repetă fără adresă, deci și linia ei se iartă;
 // orice alt 4xx sau 5xx rămâne prins de linia „[HTTP …]”, care poartă adresa.
 const KNOWN_LOGIN_401 = /^\[HTTP 401\] POST \S*\/api\/v1\/auth\/login(\?|$)|^\[consolă error\] Failed to load resource: the server responded with a status of 401/;
@@ -45,6 +48,8 @@ async function put(p, carrier, month, value, tep = false) {
   await saved;
 }
 const rowOf = (p, carrier) => p.locator("tbody tr", { hasText: carrier });
+/** Rândurile rubricilor, fără rândul cu suma combustibililor. */
+const carrierRows = (p) => p.locator("tbody tr").filter({ hasNotText: FUELS });
 const lastCell = async (p, carrier, fromEnd) => {
   const cells = rowOf(p, carrier).locator("td");
   return (await cells.nth((await cells.count()) - 1 - fromEnd).innerText()).trim();
@@ -95,19 +100,27 @@ await page.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 check("fișa se deschide cu titlul anului", (await page.locator("h1").innerText()).includes(`Fișa de energie · ${Y}`));
 await pickCarriers(Y, [ELEC, COAL]);
-check("tabelul are 2 rânduri", (await page.locator("tbody tr").count()) === 2, String(await page.locator("tbody tr").count()));
+check("tabelul are 2 rânduri", (await carrierRows(page).count()) === 2, String(await carrierRows(page).count()));
 check("rândurile sunt curentul și cărbunele", (await rowOf(page, ELEC).count()) === 1 && (await rowOf(page, COAL).count()) === 1);
 
 // (1b) Rubricile sunt ale anului: gazele bifate pe AN nu apar pe fișa din Y.
 await pickCarriers(AN, [ELEC, COAL, GAS]);
-check(`pe ${AN}: 3 rânduri, cu gazele`, (await page.locator("tbody tr").count()) === 3 && (await rowOf(page, GAS).count()) === 1,
-  String(await page.locator("tbody tr").count()));
+check(`pe ${AN}: 3 rânduri, cu gazele`, (await carrierRows(page).count()) === 3 && (await rowOf(page, GAS).count()) === 1,
+  String(await carrierRows(page).count()));
 await page.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
-check(`pe ${Y}: tot 2 rânduri, fără gaze`, (await page.locator("tbody tr").count()) === 2 && (await rowOf(page, GAS).count()) === 0,
-  String(await page.locator("tbody tr").count()));
+check(`pe ${Y}: tot 2 rânduri, fără gaze`, (await carrierRows(page).count()) === 2 && (await rowOf(page, GAS).count()) === 0,
+  String(await carrierRows(page).count()));
 
-// Curățenie: o rulare anterioară a lăsat cifre (golită, cantitatea șterge celula întreagă).
+// Curățenie: o rulare anterioară a lăsat cifre (golită, cantitatea șterge celula întreagă), sau rubrici „Pe an”.
+for (const c of [ELEC, COAL]) {
+  const back = rowOf(page, c).getByRole("button", { name: "Pe luni", exact: true });
+  if ((await back.count()) > 0) {
+    const saved = page.waitForResponse(isWrite, { timeout: 8000 }).catch(() => null);
+    await back.click();
+    await saved;
+  }
+}
 for (const c of [ELEC, COAL]) for (let m = 1; m <= 12; m++) await put(page, c, m, "");
 
 // (2) Curent 12 × 10; cărbune 12 × 1, tep pe Feb–Dec, ianuarie fără tep.
@@ -119,12 +132,41 @@ check("curent: „Total an” = 120,000", (await lastCell(page, ELEC, 1)) === "1
 check("cărbune: tep „?” cât lipsește ianuarie", (await lastCell(page, COAL, 0)) === "?", await lastCell(page, COAL, 0));
 const totalLine = () => page.locator("p", { hasText: /^Total:/ }).first().innerText();
 check("linia de total are „?”", (await totalLine()).includes("?"), await totalLine());
+// (2b) Suma combustibililor, deasupra lor, ca pe Anexa 1: aici numai cărbunele, încă fără ianuarie.
+const rowTexts = await page.locator("tbody tr").evaluateAll((rs) => rs.map((r) => r.innerText.split("\n")[0].trim()));
+check("„Combustibili și carburanți” stă deasupra cărbunelui, sub curent",
+  rowTexts.findIndex((t) => t.startsWith(FUELS)) === rowTexts.findIndex((t) => t.startsWith(COAL)) - 1 &&
+    rowTexts.findIndex((t) => t.startsWith(ELEC)) < rowTexts.findIndex((t) => t.startsWith(FUELS)),
+  rowTexts.join(" | "));
+check("suma combustibililor „?” cât lipsește ianuarie", (await lastCell(page, FUELS, 0)) === "?", await lastCell(page, FUELS, 0));
 
 // (3) tep și în ianuarie: fără „?”; pe Termene, „din 12 luni completate” și linkul spre anul declarat.
 await put(page, COAL, 1, "0,5", true);
 await page.waitForTimeout(600);
 check("cărbune: tep fără „?”", (await lastCell(page, COAL, 0)) === "6,000", await lastCell(page, COAL, 0));
 check("linia de total fără „?”", !(await totalLine()).includes("?"), await totalLine());
+check("suma combustibililor = tep-ul cărbunelui", (await lastCell(page, FUELS, 0)) === "6,000", await lastCell(page, FUELS, 0));
+
+// (3b) Cărbunele „Pe an”: o cifră și tep-ul ei țin anul; „Pe luni” aduce lunile înapoi.
+await rowOf(page, COAL).getByRole("button", { name: "Pe an", exact: true }).click();
+for (const [label, value] of [[`${COAL}, tot anul`, "20"], [`${COAL}, tot anul, tep`, "9"]]) {
+  const input = page.getByLabel(label, { exact: true });
+  await input.fill(value);
+  const saved = page.waitForResponse(isWrite, { timeout: 8000 }).catch(() => null);
+  await input.blur();
+  await saved;
+}
+await page.waitForTimeout(600);
+check("„Pe an”: cărbunele are o singură cifră, fără luni", (await rowOf(page, COAL).getByLabel(`${COAL}, ianuarie`, { exact: true }).count()) === 0);
+check("„Pe an”: „Total an” = 20,000", (await lastCell(page, COAL, 1)) === "20,000", await lastCell(page, COAL, 1));
+check("„Pe an”: suma combustibililor = 9,000", (await lastCell(page, FUELS, 0)) === "9,000", await lastCell(page, FUELS, 0));
+{
+  const saved = page.waitForResponse(isWrite, { timeout: 8000 }).catch(() => null);
+  await rowOf(page, COAL).getByRole("button", { name: "Pe luni", exact: true }).click();
+  await saved;
+  await page.waitForTimeout(600);
+}
+check("„Pe luni”: lunile revin, tep 6,000", (await lastCell(page, COAL, 0)) === "6,000", await lastCell(page, COAL, 0));
 await shot(page, "60-energie-fisa");
 
 await page.goto(BASE + "/termene", { waitUntil: "networkidle" });
