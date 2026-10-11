@@ -320,11 +320,12 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
                     </span>
                   )}
                   {canWrite && (
-                    <div>
+                    <div className="mt-1">
+                      {/* Cu chenar, nu text gri: ca „ghost” nu-l găsea nimeni (proprietarul, 11.10.2026). */}
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="-ml-2 h-6 px-2 text-xs font-normal text-content-subtle"
+                        className="h-6 px-2 text-xs"
                         onClick={() =>
                           yearly ? void backToMonths(carrier) : setByYear((prev) => ({ ...prev, [carrier]: true }))
                         }
