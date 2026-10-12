@@ -965,6 +965,13 @@ anexa nr. 4) „**devine anexă la autorizaţie** şi face parte integrantă din
 5. **Termenul titularului** (60–90 de zile înainte de aniversare) e al **partenerului**, nu al clientului
    nostru. Devine termen propriu al clientului doar pe **autorizaţia firmei lui** (`Company`), dacă o are.
 
+**11.10.2026 — termenul propriu există acum** (`V86`, odată cu raportul anual de mediu): `ReportType.PERMIT_VISA`, numai pe o firmă cu
+nr. de autorizaţie, pe ultima zi a ferestrei de la alin. (4) — **60 de zile înainte** de ziua şi luna emiterii **iniţiale**
+(`DeadlineService.visaDue`, socotit pe an comun, deci într-un an bisect vine cu o zi mai devreme, niciodată mai târziu), sau ziua
+scrisă de client. Lângă el, `ReportType.ENVIRONMENTAL_REPORT` (RAM-ul): actul nu-i dă o dată fixă — se depune la cererea de viză, la
+autoritatea care a emis autorizaţia (art. 5 alin. (1) lit. b), trimis în capul lui `V86`; textul alineatului nu e copiat aici), iar ziua o scrie autorizaţia; în aplicaţie
+e 15 ianuarie până o schimbă clientul.
+
 
 ---
 
@@ -3347,7 +3354,7 @@ Portalul Legislativ, accesat 04.10.2026. Ultimul act modificator, Legea 168/2026
 - Modelele oficiale nu conțin întrebările POIM 6.4 (ANRE 2019, minister 2021, 2023); intră pe Anexa 1 pentru că exemplarul specialistei le are (decizia proprietarului din 04.10.2026).
 
 **Unde e în cod:** `ReportType.ENERGY_ANNUAL` și `DeadlineService` (termenul), `EnergyCarrier` și `EnergyYear` (coeficienții și pragul), `EnergyAnnex1XlsxGenerator`, `EnergyDeclarationDocxGenerator`,
-`EnergyController` (`/api/v1/energy`). Migrarea `V82`.
+`EnergyController` (`/api/v1/energy`). Migrarea `V82`; din 11.10.2026 și `V85` (o rubrică trecută pe tot anul, ca luna 0).
 
 ---
 

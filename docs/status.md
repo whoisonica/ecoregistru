@@ -15,6 +15,28 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **11.10.2026, 18:04 — ✅ PE PRODUCȚIE: ENERGIA „PE AN” (`V85`) ȘI RAPORTUL ANUAL DE MEDIU (`V86`) — api v145 (`b138d04`), app v151 (`978abad`), din `main` `9d99b74` (= `origin/main`).**
+> Cerute de Andreea pe 09.10.2026. Commituri `8ff583a`, `366abae`, `9d99b74`; migrările `V85` și `V86` aplicate; liberă **`V87`** (F6b, depozitul). Întoarcerea: api v144 / app v150.
+> Înainte, pe 05.10.2026 la 22:09: app **v150** (`0ad0860`, din `b9f1dee`) — kilogramele întregi afișate fără „,000” („150 kg”), tonele tot cu trei zecimale.
+>
+> - **Energia.** O rubrică se poate trece dintr-o singură cifră pe tot anul: butonul „Pe an” de sub numele ei (cu chenar, `variant="outline"`, `9d99b74`)
+>   înlocuiește cele douăsprezece luni cu o cifră („<rubrică>, tot anul”), salvată ca luna **0** (`V85`, `EnergyYear.WHOLE_YEAR`). Cât există, rubrica e
+>   completă în toate lunile; lunile ei rămân în bază, dar nu se mai adună. „Pe luni” șterge cifra anului și lunile revin. Pe fișă, deasupra combustibililor,
+>   rândul „Combustibili și carburanți” cu suma lor tep, ca G11 pe Anexa 1 („?” cât lipsesc luni la oricare); Anexa 1 și Declarația aveau deja suma.
+> - **Raportul anual de mediu (RAM).** Ecran nou „Raport de mediu” (`/raport-mediu?an=`), în meniu imediat după „Energie”, cu taburile „Anul” (incidente,
+>   reclamații, prejudiciu, alte cerințe din autorizație), „Controale”, „Monitorizări” și „Autorizația” (nr., emitent, emiterea inițială, revizuirea, ultima viză,
+>   „spre știința”, administratorul, cele două termene). Un răspuns lipsă rămâne gol (NULL), nu „nu”. „Descarcă Word” (`EnvironmentalReportDocxGenerator`):
+>   adresa de înaintare către emitentul autorizației, cu nr. de înregistrare gol, de completat de client, apoi raportul în nouă capitole, cu centralizatorul
+>   deșeurilor generate pe punct de lucru și al ambalajelor din aceleași calcule ca rapoartele lor; semnează administratorul; fără „RECTIFICATIV”.
+> - **Termenele (`V86`).** Două tipuri noi, numai pentru o firmă cu nr. de autorizație de mediu: `ENVIRONMENTAL_REPORT` pe ziua din autorizație, **15 ianuarie**
+>   precompletat, modificabil; `PERMIT_VISA` cu **60 de zile înainte** de ziua și luna emiterii inițiale (Ordinul 1150/2020, art. 5 alin. (4); `DeadlineService.visaDue`),
+>   sau ziua scrisă de client. Legea nu dă RAM-ului o dată fixă: se depune la cererea de viză, la emitentul autorizației (art. 5 alin. (1) lit. b)), iar ziua o scrie
+>   autorizația. Schimbarea autorizației sau a zilelor mută termenele deschise; cele bifate rămân.
+> - **Probe:** backend **1501 / 0 / 4 sărite**, web `npm test` **140/0**, CI verde pe `9d99b74`. e2e: **60** extinsă (suma, „Pe an”, „Pe luni”), **61** nouă
+>   (`61-raport-mediu.mjs`, în `run.mjs`), **19** cere tasta „S” la Setări peste zece intrări în meniu (firma cu depozit are acum unsprezece), **57** aduce rândul
+>   în ecran înainte de meniu. Detaliile în `frontend/e2e/README.md`.
+> - **Rămas:** validarea Word-ului RAM la Andreea (document nou).
+
 > **05.10.2026 — ✅ PE PRODUCȚIE: ENERGIA (`V82`), PREȚURILE PE TREPTE (`V83`), PLATA ANUALĂ (`V84`) ȘI REGISTRUL ANEXA 3 NUMAI ÎN DOSAR — api v144 (`b16e1c0`), app v149 (`d0b644a`), din `main` `c13b7d8`.**
 > La cererea proprietarului („tot, juristul, tatăl meu și Andreea au validat”), cele trei ramuri de mai jos au intrat în `main` prin `feat/preturi-0510`
 > (`feat/energie-0410` și `fix/registru-anexa3-dosar` mergeuite în ea, `main` fast-forward), iar backendul și frontendul s-au deployat împreună (`scripts/deploy-split.sh both --push`, backup `b035` înainte).

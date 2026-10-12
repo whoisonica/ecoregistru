@@ -64,12 +64,14 @@ unsprezece, iar până la primul rând de meniu stăteau cinci blocuri.*
 3. **Meniul** (`lib/navItems.ts`): pe fiecare rând **tasta (1–9, 0), numele și indicatorul** („1 de cântărit”,
    „1 fără cod R/D”, „2 depășite”, „2 expiră”). **Fără iconiță cât panoul e lat** — tasta și iconița erau două semne de
    citit până la cuvânt; iconița rămâne pe șina strânsă, unde ține locul numelui. Fiecare ecran de lucru e intrare
-   proprie: Acasă · Generare · Intrări · Ieșiri · Cântar · Termene · Dosar de control · Parteneri · Setări; grupul
-   **Consultant** (F, C, B) la consultant și platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
+   proprie: Acasă · Generare · Intrări · Ieșiri · Cântar · Termene · Energie · Raport de mediu · Dosar de control · Parteneri · Setări
+   (Energie din 05.10.2026, Raport de mediu din 11.10.2026; generatorul pur are opt intrări, firma cu depozit unsprezece, deci Setările
+   iau acolo tasta **S**); grupul **Consultant** (F, C, B) la consultant și platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
    „Ambalaje" e intrare proprie numai la firma care n-are „Generare" (colectorul pur).
 4. **Taburile, sub intrarea deschisă** — Generare (Mișcări · Totalul anului · Ambalaje), Termene (De făcut · Bifate ·
-   Trecute), Parteneri (Firme · Persoane fizice, numai cu depozit), Cântar (Operațiuni · Rapoarte · SIATD, `CANTAR_TABS`,
-   28.09.2026). **O singură listă, `lib/screenTabs.ts`, citită și de pagină, și de panou.** Taburile de sub „Operațiuni”
+   Trecute), Raport de mediu (Anul · Controale · Monitorizări · Autorizația, `RAM_TABS`, 11.10.2026), Dosar de control
+   (Deșeuri · Energie, `AUDIT_FILE_TABS`, 05.10.2026), Parteneri (Firme · Persoane fizice, numai cu depozit), Cântar (Operațiuni ·
+   Rapoarte · SIATD, `CANTAR_TABS`, 28.09.2026). **O singură listă, `lib/screenTabs.ts`, citită și de pagină, și de panou.** Taburile de sub „Operațiuni”
    (Intrări · Ieșiri · Transferuri · Balotare · Formulare primite · Stoc · Inventar) sunt ale paginii, nu ale panoului, și nu
    stau în adresă. Tabul din meniu schimbă doar `?tab=`, ca `setTab` din pagină: luna, punctul și filtrele
    rămân. Cât taburile sunt desfăcute, indicatorul coboară pe primul: cifrele lui sunt despre lista implicită.
@@ -128,7 +130,8 @@ din spec (§4.2 spunea `ChoiceCards`), în aceeași familie de primitive.
 
 **Subpagină fără intrare de meniu.** O pagină la care se ajunge dintr-un rând (nu din panou) nu primește loc în meniu, se găsește cu Ctrl K (intrarea `hidden` din
 `navItems.ts`) și are în adresă ce arată. Fișa de energie a pornit așa (`/termene/energie?an=`), dar din 05.10.2026 are intrare proprie, „Energie”, imediat după Termene
-(`/energie?an=`; vechea adresă redirecționează), la cererea proprietarului.
+(`/energie?an=`; vechea adresă redirecționează), la cererea proprietarului. Raportul anual de mediu a intrat direct cu intrare proprie, pe 11.10.2026: „Raport de mediu”,
+imediat după Energie (`/raport-mediu?an=`), cu taburile din `RAM_TABS` (Anul, Controale, Monitorizări, Autorizația).
 
 Select-ul nativ rămâne pentru liste lungi (parteneri, puncte de lucru, coduri R/D din profil). **Sub șapte opțiuni,
 într-un formular nou, se folosesc `ChoiceCards` sau `PillGroup`.**
