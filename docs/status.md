@@ -15,6 +15,23 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **12.10.2026, 19:13 — ✅ PE PRODUCȚIE: REPARAȚIILE RAPORTULUI ANUAL DE MEDIU — api v146 (`410a54c`), app v152 (`affc00c`), din `main` `ee788c0` (= `origin/main`), fără migrare.**
+> Găsite la verificarea din 12.10.2026 a feliei din 11.10 (cod și Word comparat cu un RAM real și cu Ordinul 1150/2020). Liberă tot **`V87`**. Întoarcerea: api v145 / app v151.
+>
+> - **Word-ul RAM, tabelul de deșeuri.** Un rând care nu se închide spune de ce, ca în evidența centralizată: „(*)” pe „Stoc final” când are ieșiri fără cod R/D,
+>   „(**)” pe „Generat” când are încărcături de cântărit, fiecare cu nota lui sub tabel; codul de deșeu scris ca în listă (`WasteCodeLabel.official`).
+> - **Word-ul RAM, răspunsurile lipsă.** Monitorizările necompletate și o revizuire fără dată ies ca linie de completat, nu „Nu a fost cazul.” / „nu a fost revizuită.”.
+> - **Termenele RAM și viză.** Un „Salvează” pe Autorizația care nu mută ziua lasă termenul și mementourile deja trimise neatinse; o zi mutată mută rândul anului ei
+>   și repornește mementourile. Un an bifat „Depus” nu mai primește al doilea termen, iar „Trecute” nu mai adaugă un „depășit” calculat lângă el. O zi mutată
+>   înaintea zilei de azi lasă termenul anului curent depășit, cu mailul de ratare. Fără nr. de autorizație se șterg toate termenele RAM și viză deschise,
+>   și cele depășite; cele bifate rămân.
+> - **Energia.** „Pe luni” apăsat cât salvarea cifrei anului e încă în zbor nu mai sare înapoi pe „Pe an”: trece prin coada celulei (`lib/keyedQueue.ts`).
+> - **Garda de izolare.** `IsolationInventoryTest` vede și entitățile fără firmă proprie, care atârnă de una (controalele și monitorizările RAM): li se cere filtrarea
+>   pe id-ul părintelui. Șapte interogări globale de fel au intrat în scutiri, fiecare cu motivul ei.
+> - **Probe:** backend **1511 / 0 / 4 sărite** (noi: `EnvironmentalReportIT` ×4, `VisaDueTest`, `EnvironmentalReportDocxGeneratorTest`), web **143/143**
+>   (`keyedQueue.test.ts`), e2e **48/48**, CI verde pe `ee788c0`.
+> - **Rămas:** validarea Word-ului RAM la Andreea.
+
 > **11.10.2026, 18:04 — ✅ PE PRODUCȚIE: ENERGIA „PE AN” (`V85`) ȘI RAPORTUL ANUAL DE MEDIU (`V86`) — api v145 (`b138d04`), app v151 (`978abad`), din `main` `9d99b74` (= `origin/main`).**
 > Cerute de Andreea pe 09.10.2026. Commituri `8ff583a`, `366abae`, `9d99b74`; migrările `V85` și `V86` aplicate; liberă **`V87`** (F6b, depozitul). Întoarcerea: api v144 / app v150.
 > Înainte, pe 05.10.2026 la 22:09: app **v150** (`0ad0860`, din `b9f1dee`) — kilogramele întregi afișate fără „,000” („150 kg”), tonele tot cu trei zecimale.
