@@ -16,6 +16,7 @@ import ro.ecoregistru.controller.response.EnvironmentalReportResponse;
 import ro.ecoregistru.controller.response.EnvironmentalReportResponse.Permit;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.WorkPoint;
+import ro.ecoregistru.util.WasteCodeLabel;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -149,8 +150,9 @@ public class EnvironmentalReportDocxGenerator {
         Permit permit = r.permit();
         text(doc, "Autorizația de mediu nr. " + or(permit.number(), "..........") + " din "
                 + date(permit.issuedOn()) + (permit.issuer() == null ? "" : ", emisă de " + permit.issuer()) + ".");
+        // Fără dată nu știm dacă n-a fost revizuită sau doar n-a scris-o nimeni: linie de completat.
         text(doc, permit.revisedOn() == null
-                ? "Ultima revizuire: nu a fost revizuită."
+                ? "Ultima revizuire: " + DOTS
                 : "Ultima revizuire s-a făcut la data de " + date(permit.revisedOn()) + ".");
         text(doc, "Ultima viză anuală: " + date(permit.visaOn()) + ".");
 
@@ -182,9 +184,10 @@ public class EnvironmentalReportDocxGenerator {
                 "Măsuri dispuse și modul de rezolvare"}, new int[]{5, 17, 18, 18, 42}, rows);
     }
 
+    /** No yes/no question here, as there is for inspections: an empty list is unanswered, so a line to fill by hand. */
     private void monitorings(XWPFDocument doc, EnvironmentalReportResponse r) {
         if (r.monitorings().isEmpty()) {
-            text(doc, "Nu a fost cazul.");
+            text(doc, DOTS);
             return;
         }
         List<String[]> rows = new ArrayList<>();
@@ -197,7 +200,11 @@ public class EnvironmentalReportDocxGenerator {
                 "Rezultat"}, new int[]{5, 17, 16, 12, 20, 30}, rows);
     }
 
-    /** The "centralizator" of the annual waste declaration, one table per work point, in kilograms. */
+    /**
+     * The "centralizator" of the annual waste declaration, one table per work point, in kilograms. A row that does not
+     * add up carries the same marks and notes as the declaration itself: "(*)" on the closing stock for exits without an
+     * R/D code, "(**)" on "Generat" for loads still waiting for their weight.
+     */
     private void waste(XWPFDocument doc, List<AnnualDeclaration> declarations, int year) {
         text(doc, "Deșeuri generate — centralizatorul raportării anuale (HG 856/2002), în kilograme:");
         if (declarations.isEmpty() || declarations.stream().allMatch(a -> a.rows().isEmpty())) {
@@ -213,14 +220,32 @@ public class EnvironmentalReportDocxGenerator {
             }
             List<String[]> rows = new ArrayList<>();
             for (AnnualDeclaration.Row w : a.rows()) {
-                rows.add(new String[]{w.wasteCode() + (w.hazardous() ? "*" : ""), nz(w.wasteCodeName()),
-                        kg(w.openingStock()), kg(w.generated()), kg(w.recovered()), kg(w.disposed()),
-                        kg(w.closingStock())});
+                rows.add(new String[]{nz(WasteCodeLabel.official(w.wasteCode(), w.hazardous())), nz(w.wasteCodeName()),
+                        kg(w.openingStock()), kg(w.generated()) + (w.awaitingWeighing() ? " (**)" : ""),
+                        kg(w.recovered()), kg(w.disposed()),
+                        kg(w.closingStock()) + (w.hasUnclassifiedOut() ? " (*)" : "")});
             }
             table(doc, new String[]{"Cod deșeu", "Denumire", "Stoc inițial", "Generat", "Valorificat", "Eliminat",
                     "Stoc final"}, new int[]{11, 33, 11, 11, 12, 11, 11}, rows);
+            if (a.hasUnclassifiedOut()) {
+                text(doc, UNCLASSIFIED_NOTE);
+            }
+            if (a.hasAwaitingWeighing()) {
+                text(doc, AWAITING_WEIGHING_NOTE);
+            }
         }
     }
+
+    /** The notes of {@code AnnualDeclarationGenerator}, word for word, in the "Stoc final" column this table has. */
+    static final String UNCLASSIFIED_NOTE = "(*) după cifra din coloana „Stoc final”: rândul conține cantități ieșite "
+            + "de pe amplasament fără cod de operațiune R/D, deci scăzute din stoc dar necuprinse în „Valorificat” sau "
+            + "„Eliminat”. Completați codul pe mișcările respective (ecranul Mișcări) înainte de depunere. (Asteriscul de "
+            + "după codul de deșeu are alt înțeles: marchează un deșeu periculos, conform HG 856/2002 art. 4 alin. (3).)";
+
+    static final String AWAITING_WEIGHING_NOTE = "(**) după cifra din coloana „Generat”: pe rând sunt încărcături "
+            + "predate care așteaptă cântărirea la destinatar, deci cantitatea lor nu e cuprinsă nici în „Generat”, nici "
+            + "în „Valorificat” sau „Eliminat”. Raportul e provizoriu: completați cantitatea primită (ecranul Mișcări) "
+            + "înainte de depunere.";
 
     /** Tabelul 1 and Tabelul 2 of Anexa 1 Ambalaje (Ordinul 794/2012), centralised, in kilograms. */
     private void packaging(XWPFDocument doc, PackagingDeclaration p, int year) {

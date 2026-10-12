@@ -57,6 +57,7 @@ class EnvironmentalReportIT {
     @Autowired AppUserRepository appUserRepository;
     @Autowired CompanyRepository companyRepository;
     @Autowired ReportingDeadlineRepository deadlineRepository;
+    @Autowired DeadlineService deadlineService;
 
     private String admin;
     private String viewer;
@@ -170,10 +171,14 @@ class EnvironmentalReportIT {
         // Another RAM day and a visa day written by hand: the open deadlines move, they do not pile up.
         putTo("/permit?year=2025", admin, PERMIT.replace("\"ramDueDay\":15", "\"ramDueDay\":31,\"visaDueMonth\":9,"
                 + "\"visaDueDay\":1").replace("\"ramDueMonth\":1", "\"ramDueMonth\":3")).andExpect(status().isOk());
-        assertThat(open(ReportType.ENVIRONMENTAL_REPORT)).singleElement()
-                .extracting(ReportingDeadline::getDueDate).isEqualTo(next(MonthDay.of(3, 31), today));
-        assertThat(open(ReportType.PERMIT_VISA)).singleElement()
-                .extracting(ReportingDeadline::getDueDate).isEqualTo(next(MonthDay.of(9, 1), today));
+        // A day moved before today leaves this year's one overdue (aDayMovedIntoThePastLeavesTheYearOverdue), so only
+        // the coming ones are counted here: which side of today the new day falls on depends on the calendar.
+        assertThat(open(ReportType.ENVIRONMENTAL_REPORT)).filteredOn(d -> !d.getDueDate().isBefore(today))
+                .singleElement().extracting(ReportingDeadline::getDueDate).isEqualTo(next(MonthDay.of(3, 31), today));
+        assertThat(open(ReportType.PERMIT_VISA)).filteredOn(d -> !d.getDueDate().isBefore(today))
+                .singleElement().extracting(ReportingDeadline::getDueDate).isEqualTo(next(MonthDay.of(9, 1), today));
+        assertThat(open(ReportType.PERMIT_VISA)).filteredOn(d -> d.getDueDate().isBefore(today))
+                .allSatisfy(d -> assertThat(d.getDueDate().getYear()).isEqualTo(today.getYear()));
 
         // No authorization number, no RAM and no visa.
         putTo("/permit?year=2025", admin, PERMIT.replace("\"number\":\"17\"", "\"number\":\"\"")).andExpect(status().isOk());
@@ -224,6 +229,97 @@ class EnvironmentalReportIT {
                 .doesNotContain("RECTIFICATIV");
         // Unanswered complaints: a line to fill by hand, never "nu a fost cazul".
         assertThat(text).doesNotContain("nu s-au înregistrat sesizări");
+    }
+
+    // ── Moving the RAM day (12.10.2026): reminders, a ticked year, a day moved into the past ─────────────────────
+
+    /** The test company with an authorization and the RAM on {@code month}/{@code day}, saved. */
+    private Company permitWithRamOn(int month, int day) {
+        Company c = companyRepository.findById(tenantId).orElseThrow();
+        c.setEnvironmentalAuthNumber("17");
+        c.setRamDueMonth(month);
+        c.setRamDueDay(day);
+        return companyRepository.save(c);
+    }
+
+    private List<ReportingDeadline> all(ReportType type) {
+        return deadlineRepository.findAll().stream()
+                .filter(d -> d.getCompany().getId().equals(tenantId) && d.getReportType() == type)
+                .sorted(java.util.Comparator.comparing(ReportingDeadline::getDueDate))
+                .toList();
+    }
+
+    @Test
+    void aSaveThatKeepsTheDayKeepsTheRemindersAlreadySent() {
+        LocalDate today = LocalDate.of(2027, 1, 11);
+        Company c = permitWithRamOn(1, 15);
+        deadlineService.reschedulePermitDeadlines(c, today);
+        ReportingDeadline ram = all(ReportType.ENVIRONMENTAL_REPORT).get(0);
+        assertThat(ram.getDueDate()).isEqualTo(LocalDate.of(2027, 1, 15));
+        ram.setWarned7Days(true);
+        deadlineRepository.save(ram);
+
+        // The next day only the administrator's name is corrected: same day, same row, the 7-day mail not sent again.
+        c.setAdministratorName("Maria Ionescu");
+        deadlineService.reschedulePermitDeadlines(companyRepository.save(c), today.plusDays(1));
+        assertThat(all(ReportType.ENVIRONMENTAL_REPORT)).singleElement().satisfies(d -> {
+            assertThat(d.getId()).isEqualTo(ram.getId());
+            assertThat(d.isWarned7Days()).isTrue();
+        });
+
+        // The day really moves: the reminders are due again, on the new day.
+        deadlineService.reschedulePermitDeadlines(permitWithRamOn(1, 25), today.plusDays(1));
+        assertThat(all(ReportType.ENVIRONMENTAL_REPORT)).singleElement().satisfies(d -> {
+            assertThat(d.getDueDate()).isEqualTo(LocalDate.of(2027, 1, 25));
+            assertThat(d.isWarned7Days()).isFalse();
+        });
+    }
+
+    @Test
+    void aYearTickedOnItsOldDayGetsNoSecondDeadline() {
+        Company c = permitWithRamOn(1, 15);
+        deadlineService.reschedulePermitDeadlines(c, LocalDate.of(2027, 1, 2));
+        ReportingDeadline ram = all(ReportType.ENVIRONMENTAL_REPORT).get(0);
+        ram.setStatus(DeadlineStatus.DONE);
+        ram.setCompletedAt(Instant.now());
+        deadlineRepository.save(ram);
+
+        // Filed on 5 January; on the 8th the day becomes 20 January. 2027 is done: the next one is 2028.
+        deadlineService.reschedulePermitDeadlines(permitWithRamOn(1, 20), LocalDate.of(2027, 1, 8));
+        assertThat(all(ReportType.ENVIRONMENTAL_REPORT)).extracting(ReportingDeadline::getDueDate)
+                .containsExactly(LocalDate.of(2027, 1, 15), LocalDate.of(2028, 1, 20));
+        // The morning job agrees, and "Trecute" does not invent an overdue 20 January next to the ticked one.
+        deadlineService.ensureUpcoming(tenantId, LocalDate.of(2027, 1, 9));
+        assertThat(all(ReportType.ENVIRONMENTAL_REPORT)).hasSize(2);
+        assertThat(deadlineService.listPast(tenantId, LocalDate.of(2027, 2, 1)))
+                .filteredOn(d -> d.reportType() == ReportType.ENVIRONMENTAL_REPORT)
+                .singleElement()
+                .satisfies(d -> assertThat(d.status()).isEqualTo(DeadlineStatus.DONE));
+    }
+
+    @Test
+    void aDayMovedIntoThePastLeavesTheYearOverdue() {
+        Company c = permitWithRamOn(1, 15);
+        deadlineService.reschedulePermitDeadlines(c, LocalDate.of(2027, 1, 12));
+
+        // On 12 January the authorization turns out to say 10 January: 2027 was missed, not cancelled.
+        deadlineService.reschedulePermitDeadlines(permitWithRamOn(1, 10), LocalDate.of(2027, 1, 12));
+        assertThat(all(ReportType.ENVIRONMENTAL_REPORT)).extracting(ReportingDeadline::getDueDate)
+                .containsExactly(LocalDate.of(2027, 1, 10), LocalDate.of(2028, 1, 10));
+        assertThat(all(ReportType.ENVIRONMENTAL_REPORT).get(0).isWarnedMissed()).isFalse();
+    }
+
+    @Test
+    void twoOpenDeadlinesLeftInOneYearBecomeOne() {
+        // Before 12.10.2026 an overdue 15 January plus a day moved to the 25th left two open in 2027.
+        Company c = permitWithRamOn(1, 25);
+        for (LocalDate due : List.of(LocalDate.of(2027, 1, 15), LocalDate.of(2027, 1, 25))) {
+            deadlineRepository.save(ReportingDeadline.builder().company(c).reportType(ReportType.ENVIRONMENTAL_REPORT)
+                    .dueDate(due).status(DeadlineStatus.UPCOMING).createdAt(Instant.now()).build());
+        }
+        deadlineService.reschedulePermitDeadlines(permitWithRamOn(1, 20), LocalDate.of(2027, 1, 18));
+        assertThat(all(ReportType.ENVIRONMENTAL_REPORT)).extracting(ReportingDeadline::getDueDate)
+                .containsExactly(LocalDate.of(2027, 1, 20));
     }
 
     private static LocalDate next(MonthDay day, LocalDate today) {

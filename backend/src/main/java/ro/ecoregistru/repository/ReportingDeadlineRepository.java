@@ -33,6 +33,10 @@ public interface ReportingDeadlineRepository extends JpaRepository<ReportingDead
     Optional<ReportingDeadline> findByCompany_IdAndReportTypeAndDueDate(UUID companyId, ReportType reportType,
                                                                         LocalDate dueDate);
 
+    /** The deadlines of one type in a span — one calendar year, for the RAM and the visa, whose day can move. */
+    List<ReportingDeadline> findAllByCompany_IdAndReportTypeAndDueDateBetween(UUID companyId, ReportType reportType,
+                                                                             LocalDate from, LocalDate to);
+
     /**
      * Cross-tenant query for the alert scheduler: deadlines in a given status whose due date
      * falls in [from, to]. Not tenant-scoped — the scheduler is a system job, not a request.

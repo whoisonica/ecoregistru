@@ -3,6 +3,7 @@ import { Info } from "lucide-react";
 import { useSaveEnergyCell } from "@/hooks/useEnergy";
 import { apiErrorMessage } from "@/lib/api";
 import { ENERGY_CARRIERS, FUEL_CARRIERS, WHOLE_YEAR } from "@/lib/energy";
+import { createKeyedQueue } from "@/lib/keyedQueue";
 import { strings } from "@/lib/strings";
 import type { EnergyCarrier, EnergySheet } from "@/lib/types";
 import { formatDecimal } from "@/lib/units";
@@ -68,9 +69,9 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
   /**
    * O coadă pe celulă (rubrică × lună). Cantitatea și tep-ul cărbunelui pleacă în același PUT, deci
    * două ieșiri la rând din aceeași celulă ar trimite două cereri care pot ajunge invers și ar pune
-   * tep-ul vechi la loc. Celulele diferite nu se așteaptă între ele.
+   * tep-ul vechi la loc. Celulele diferite nu se așteaptă între ele. „Pe luni” trece prin aceeași coadă.
    */
-  const queues = useRef(new Map<string, Promise<void>>());
+  const [enqueue] = useState(() => createKeyedQueue());
   /** Rubricile trecute pe „Pe an” înainte să aibă cifra anului: modul ține atunci de ecran, nu de server. */
   const [byYear, setByYear] = useState<Partial<Record<EnergyCarrier, boolean>>>({});
 
@@ -174,14 +175,7 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
       setError(keyOf(carrier, month, Number.isNaN(quantity) ? "q" : "t"), t.cellInvalid);
       return;
     }
-    const cellKey = `${carrier}-${month}`;
-    const queued = (queues.current.get(cellKey) ?? Promise.resolve()).then(() =>
-      send(carrier, month, field, byHand)
-    );
-    queues.current.set(cellKey, queued);
-    void queued.finally(() => {
-      if (queues.current.get(cellKey) === queued) queues.current.delete(cellKey);
-    });
+    void enqueue(`${carrier}-${month}`, () => send(carrier, month, field, byHand));
   }
 
   function cellInput(carrier: EnergyCarrier, month: number, field: Field, byHand: boolean) {
@@ -238,11 +232,18 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
   const hasWholeYear = (carrier: EnergyCarrier) => baseOf(carrier, WHOLE_YEAR).quantity != null;
   const isByYear = (carrier: EnergyCarrier) => hasWholeYear(carrier) || byYear[carrier] === true;
 
-  /** Înapoi la luni: cifra anului se șterge, ca lunile să se adune din nou. */
-  async function backToMonths(carrier: EnergyCarrier) {
+  /**
+   * Înapoi la luni: cifra anului se șterge, ca lunile să se adune din nou. Pusă la coada celulei anului,
+   * după o salvare încă în zbor, și citită din `knownRef`: ce a răspuns salvarea aceea, nu randarea de dinainte.
+   */
+  function backToMonths(carrier: EnergyCarrier) {
+    void enqueue(`${carrier}-${WHOLE_YEAR}`, () => clearWholeYear(carrier));
+  }
+
+  async function clearWholeYear(carrier: EnergyCarrier) {
     const qKey = keyOf(carrier, WHOLE_YEAR, "q");
     const tKey = keyOf(carrier, WHOLE_YEAR, "t");
-    if (hasWholeYear(carrier)) {
+    if (baseOf(carrier, WHOLE_YEAR, knownRef.current).quantity != null) {
       try {
         await save.mutateAsync({ year: sheet.year, carrier, month: WHOLE_YEAR, quantity: null });
       } catch (err) {
@@ -327,7 +328,7 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
                         size="sm"
                         className="h-6 px-2 text-xs"
                         onClick={() =>
-                          yearly ? void backToMonths(carrier) : setByYear((prev) => ({ ...prev, [carrier]: true }))
+                          yearly ? backToMonths(carrier) : setByYear((prev) => ({ ...prev, [carrier]: true }))
                         }
                       >
                         {yearly ? t.byMonth : t.byYear}

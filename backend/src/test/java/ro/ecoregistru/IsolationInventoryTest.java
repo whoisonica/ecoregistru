@@ -39,16 +39,43 @@ class IsolationInventoryTest {
      * entitate nouă cu firmă intră singură sub regulă.
      */
     private static Set<Class<?>> tenantOwnedEntities() throws Exception {
+        return entitiesOwned(false);
+    }
+
+    /**
+     * Și cele care atârnă de o entitate a firmei, fără firmă proprie (un câmp de tipul ei, ca {@code report}
+     * la controalele RAM-ului): până pe 12.10.2026 scăpau de regulă.
+     */
+    private static Set<Class<?>> childEntities() throws Exception {
+        Set<Class<?>> children = entitiesOwned(true);
+        children.removeAll(entitiesOwned(false));
+        return children;
+    }
+
+    private static Set<Class<?>> entitiesOwned(boolean withChildren) throws Exception {
         ClassPathScanningCandidateComponentProvider scanner =
                 new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AssignableTypeFilter(Object.class));
         Set<Class<?>> owned = new java.util.HashSet<>();
+        List<Class<?>> entities = new ArrayList<>();
         for (BeanDefinition bd : scanner.findCandidateComponents("ro.ecoregistru.entity")) {
             Class<?> type = Class.forName(bd.getBeanClassName());
+            entities.add(type);
             boolean hasCompany = java.util.Arrays.stream(type.getDeclaredFields())
                     .anyMatch(f -> f.getName().equals("company"));
             if (hasCompany) {
                 owned.add(type);
+            }
+        }
+        boolean grew = withChildren;
+        while (grew) {
+            grew = false;
+            for (Class<?> type : entities) {
+                if (!owned.contains(type) && java.util.Arrays.stream(type.getDeclaredFields())
+                        .anyMatch(f -> owned.contains(f.getType()))) {
+                    owned.add(type);
+                    grew = true;
+                }
             }
         }
         return owned;
@@ -92,6 +119,18 @@ class IsolationInventoryTest {
             // ── Abonamente: ale platformei, peste toate firmele ────────────────────────────────
             "findAllByStatusNotAndStartedAtLessThanEqual", "findAllByStatusNotAndStartedAtAfter",
             "findAllByStatusIn", "findAllOfCompanies",
+            // Ultima factură a fiecărui client direct, pentru tabelul „Clienți” al platformei (`CompanyService`).
+            "findLatestOfCompanies",
+
+            // ── Copii fără firmă proprie, găsiți de proba asta pe 12.10.2026, citiți la apelant ──
+            // Răspunsul Netopia vine fără sesiune: plata se găsește după comanda pe care am trimis-o noi.
+            "findByOrderId",
+            // Sesiunile telefonului: tokenul e ușa de intrare (ca adresa la login), iar lista e a unui
+            // utilizator dat (`DeviceSessionService`), deci a firmei lui; push-ul primește utilizatorii firmei.
+            "findByTokenHash", "findByPreviousTokenHash", "findByUserAndRevokedAtIsNullOrderByLastUsedAtDesc",
+            "findLiveWithPushToken",
+            // Codul de resetare a parolei: tot ușa de intrare, înainte să știm a cui e cererea.
+            "findByCodeAndVerificationRecordType",
 
             // ── Scopare indirectă, verificată la apelant (20.09.2026, citit în cod) ────────────
             // Lotul de import se ia întâi cu firma (`findByIdAndCompanyId` / `findAllByCompanyId…`
@@ -106,6 +145,7 @@ class IsolationInventoryTest {
     @Test
     void everyQueryThatReturnsACompanysRowsFiltersByCompany() throws Exception {
         Set<Class<?>> owned = tenantOwnedEntities();
+        Set<Class<?>> children = childEntities();
         // Repository-urile sunt **interfeţe**, iar scanerul implicit le sare: `isCandidateComponent`
         // cere o clasă concretă. Fără suprascrierea asta lista ieşea goală, iar proba ar fi fost
         // verde degeaba — motivul pentru care mai jos stă un control pozitiv.
@@ -124,6 +164,12 @@ class IsolationInventoryTest {
         for (BeanDefinition bd : scanner.findCandidateComponents("ro.ecoregistru.repository")) {
             Class<?> repo = Class.forName(bd.getBeanClassName());
             for (Method m : repo.getDeclaredMethods()) {
+                // Un copil se ia prin părinte (`findAllByReport_Id…`): părintele se verifică cu firma la apelant.
+                if (returnsAny(m, children) && !returnsAny(m, owned) && !NOT_TENANT_SCOPED.contains(m.getName())
+                        && !scopesByCompany(m) && !scopesByParent(m)) {
+                    offenders.add(repo.getSimpleName() + "." + m.getName());
+                    continue;
+                }
                 if (!returnsAny(m, owned)) {
                     continue;
                 }
@@ -144,6 +190,15 @@ class IsolationInventoryTest {
         assertThat(offenders)
                 .as("interogări care întorc rânduri ale unei firme fără s-o filtreze")
                 .isEmpty();
+    }
+
+    /** Filtrează pe id-ul unei relații ({@code Report_Id}, {@code Movement_Id}), deci pe un părinte anume. */
+    private static boolean scopesByParent(Method m) {
+        if (m.getName().toLowerCase(Locale.ROOT).contains("_id")) {
+            return true;
+        }
+        Query q = m.getAnnotation(Query.class);
+        return q != null && q.value().toLowerCase(Locale.ROOT).matches("(?s).*\\w\\.\\w+\\.id\\b.*");
     }
 
     private static boolean scopesByCompany(Method m) {

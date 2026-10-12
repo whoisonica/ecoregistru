@@ -92,6 +92,13 @@ public class DeadlineService {
     /** Cât de departe se caută următoarea apariție: un termen anual bifat devreme sare peste un an. */
     private static final int YEARS_AHEAD = 2;
 
+    /**
+     * The deadlines whose day the company writes and can move (V86): one per calendar year, whatever its day. A year
+     * that has one, open or ticked, gets no other — so moving the day after a "Depus" does not open the year again.
+     */
+    private static final Set<ReportType> YEARLY_MOVABLE = java.util.EnumSet.of(ReportType.ENVIRONMENTAL_REPORT,
+            ReportType.PERMIT_VISA);
+
     private static final List<MonthDay> EVERY_25TH = Arrays.stream(Month.values())
             .map(m -> MonthDay.of(m, 25)).toList();
     // The 25th of the month after each quarter: January, April, July, October.
@@ -135,7 +142,9 @@ public class DeadlineService {
         List<ReportingDeadline> saved = deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
                 companyId, from, to);
         Set<String> savedKeys = saved.stream()
-                .map(d -> d.getReportType() + "|" + d.getDueDate())
+                .map(d -> YEARLY_MOVABLE.contains(d.getReportType())
+                        ? d.getReportType() + "|" + d.getDueDate().getYear()
+                        : d.getReportType() + "|" + d.getDueDate())
                 .collect(java.util.stream.Collectors.toSet());
         List<DeadlineResponse> rows = new java.util.ArrayList<>(saved.stream().map(d -> toResponse(d, today)).toList());
 
@@ -144,7 +153,8 @@ public class DeadlineService {
         for (Rule rule : rules(company)) {
             for (MonthDay day : rule.days()) {
                 LocalDate due = day.atYear(today.getYear());
-                if (due.isAfter(to) || savedKeys.contains(rule.type() + "|" + due) || !rule.owed().test(due)) {
+                String key = rule.type() + "|" + (YEARLY_MOVABLE.contains(rule.type()) ? due.getYear() : due);
+                if (due.isAfter(to) || savedKeys.contains(key) || !rule.owed().test(due)) {
                     continue;
                 }
                 rows.add(new DeadlineResponse(null, rule.type(), due, DeadlineStatus.OVERDUE, null, null, true,
@@ -234,8 +244,11 @@ public class DeadlineService {
                 if (due.isBefore(today)) {
                     continue;
                 }
-                Optional<ReportingDeadline> existing = deadlineRepository
-                        .findByCompany_IdAndReportTypeAndDueDate(company.getId(), type, due);
+                // A movable one is looked up on the whole year, an open one first: a year ticked on its old day is done.
+                Optional<ReportingDeadline> existing = YEARLY_MOVABLE.contains(type)
+                        ? inYear(company, type, year).stream()
+                                .min(java.util.Comparator.comparing(d -> d.getStatus() == DeadlineStatus.DONE))
+                        : deadlineRepository.findByCompany_IdAndReportTypeAndDueDate(company.getId(), type, due);
                 if (existing.isPresent()) {
                     if (existing.get().getStatus() == DeadlineStatus.DONE) {
                         continue;
@@ -411,21 +424,71 @@ public class DeadlineService {
     }
 
     /**
-     * After the authorization or one of its due days changed: the open RAM and visa deadlines from today on are dropped
-     * and generated again on the new days. Those already ticked stay — they are the company's history.
+     * After the authorization was saved (12.10.2026). An open RAM or visa deadline of this year or later moves to the new
+     * day of its own year; one whose day did not change is left alone, reminders sent included, so a "Salvează" that
+     * only fixed the administrator's name does not send them again. Moved before today, it stays, overdue: the cycle
+     * was missed, not cancelled. A year already ticked "Depus" keeps its tick and gets no second deadline. Without an
+     * authorization number every open one is dropped, overdue included: there is no authorization to report on. The
+     * ticked ones are the company's history.
      */
     @Transactional
     public void reschedulePermitDeadlines(Company company) {
-        LocalDate today = today();
+        reschedulePermitDeadlines(company, today());
+    }
+
+    /** {@link #reschedulePermitDeadlines(Company)} on a given day, so the tests do not depend on the calendar. */
+    @Transactional
+    public void reschedulePermitDeadlines(Company company, LocalDate today) {
+        reschedule(company, ReportType.ENVIRONMENTAL_REPORT, environmentalReportDeadline(company), today);
+        reschedule(company, ReportType.PERMIT_VISA, permitVisaDeadline(company), today);
+    }
+
+    /** Before any RAM or visa the application could have made: the authorization came in V86, 11.10.2026. */
+    private static final LocalDate NO_AUTHORIZATION_FROM = LocalDate.of(2000, 1, 1);
+
+    private void reschedule(Company company, ReportType type, Optional<Rule> rule, LocalDate today) {
         List<ReportingDeadline> open = deadlineRepository
                 .findAllByCompany_IdAndReportTypeInAndStatusNotAndDueDateGreaterThanEqual(company.getId(),
-                        List.of(ReportType.ENVIRONMENTAL_REPORT, ReportType.PERMIT_VISA), DeadlineStatus.DONE, today);
-        deadlineRepository.deleteAll(open);
+                        List.of(type), DeadlineStatus.DONE,
+                        rule.isPresent() ? today.withDayOfYear(1) : NO_AUTHORIZATION_FROM);
+        if (rule.isEmpty()) {
+            deadlineRepository.deleteAll(open);
+            return;
+        }
+        MonthDay day = rule.get().days().get(0);
+        // One open deadline per year is kept, none in a year already ticked. Before 12.10.2026 a moved day could leave
+        // two in the same year; the extra ones go first, flushed, so the kept one can take the day without meeting them.
+        List<ReportingDeadline> kept = new java.util.ArrayList<>();
+        open.stream()
+                .collect(java.util.stream.Collectors.groupingBy(d -> d.getDueDate().getYear()))
+                .forEach((year, rows) -> {
+                    LocalDate due = day.atYear(year);
+                    boolean ticked = inYear(company, type, year).stream()
+                            .anyMatch(other -> other.getStatus() == DeadlineStatus.DONE);
+                    ReportingDeadline keep = ticked ? null : rows.stream()
+                            .filter(d -> d.getDueDate().equals(due)).findFirst().orElse(rows.get(0));
+                    rows.stream().filter(d -> d != keep).forEach(deadlineRepository::delete);
+                    if (keep != null) {
+                        kept.add(keep);
+                    }
+                });
         deadlineRepository.flush();
-        environmentalReportDeadline(company)
-                .ifPresent(r -> ensureNext(company, r.type(), r.days(), today, r.owed()));
-        permitVisaDeadline(company)
-                .ifPresent(r -> ensureNext(company, r.type(), r.days(), today, r.owed()));
+        for (ReportingDeadline d : kept) {
+            LocalDate due = day.atYear(d.getDueDate().getYear());
+            if (!due.equals(d.getDueDate())) {
+                d.setDueDate(due);
+                d.setWarned7Days(false);
+                d.setWarned1Day(false);
+                d.setWarnedMissed(false);
+            }
+        }
+        deadlineRepository.flush();
+        ensureNext(company, type, rule.get().days(), today, rule.get().owed());
+    }
+
+    private List<ReportingDeadline> inYear(Company company, ReportType type, int year) {
+        return deadlineRepository.findAllByCompany_IdAndReportTypeAndDueDateBetween(company.getId(), type,
+                LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
     }
 
     @Transactional
