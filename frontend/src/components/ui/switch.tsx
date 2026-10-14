@@ -51,6 +51,7 @@ export function Switch({
           checked ? "bg-brand" : "bg-line-strong"
         )}
       >
+        {/* Butonul care alunecă rămâne alb pe orice temă: stă pe verde sau pe gri, nu pe pagină. */}
         <span
           className={cn(
             "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-[left]",

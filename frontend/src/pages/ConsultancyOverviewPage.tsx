@@ -207,7 +207,7 @@ function DeadlineCell({ row, onOpen }: { row: ConsultancyOverviewRow; onOpen: ()
         {next ? (
           <>
             {t.next.replace("{date}", formatDate(next.dueDate))}
-            <span className={days !== null && days <= 7 ? "ml-1 font-medium text-amber-700" : "ml-1 text-content-subtle"}>
+            <span className={days !== null && days <= 7 ? "ml-1 font-medium text-state-warn-text" : "ml-1 text-content-subtle"}>
               ({days === 0
                 ? strings.deadlines.daysToday
                 : days === 1

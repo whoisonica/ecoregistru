@@ -64,7 +64,7 @@ export function MarketRolePicker({
         ))}
       </div>
       {traderOnly && (
-        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-2 rounded-md border border-state-warn-line bg-state-warn-bg px-3 py-2 text-xs text-state-warn-text">
           {strings.companyProfile.marketRolesTraderOnly}
         </p>
       )}

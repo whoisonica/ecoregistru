@@ -72,6 +72,11 @@
   --state-bad: 217 45 32; /* #D92D20 */
   --state-bad-text: 180 35 24; /* #B42318 */
   --state-off: 184 191 187; /* #B8BFBB */
+  --state-bad-fg: 255 255 255; /* #FFFFFF — textul de pe butonul „danger” */
+  --state-bad-bg: 254 242 242; /* #FEF2F2 — fondul mesajelor de eroare, rândul de ștergere sub mouse */
+  --state-bad-line: 254 202 202; /* #FECACA */
+  --state-warn-bg: 255 251 235; /* #FFFBEB — fondul avertismentelor */
+  --state-warn-line: 253 230 138; /* #FDE68A */
   /* Intrarea în depozit */
   --inbound: 28 111 209; /* #1C6FD1 */
   --inbound-key: 21 91 173; /* #155BAD — sub mouse */
@@ -117,6 +122,122 @@
   /* Fără canale RGB: au transparența lor */
   --scrim: rgb(22 26 24 / 0.45); /* fundalul de sub dialog și sub sertarul de pe telefon */
   --shadow-popover: 0 18px 40px -12px rgb(0 0 0 / 0.35);
+}
+
+/* Celelalte două teme, după `data-theme` pe `<html>` (îl pune scriptul din `index.html` și `lib/theme.ts`). Stau sub
+   `@media screen` dinadins: ce se tipărește din browser iese pe alb, cu valorile Luminos de pe `:root`, oricare ar fi tema. */
+@media screen {
+  /* Pădure: pagina e ca la Luminos, doar panoul (cu plăcuța, logoul de pe el) și graficul trec pe verdele închis al logoului. */
+  [data-theme="padure"] {
+    --panel: 20 83 45; /* #14532D */
+    --panel-edge: 20 83 45; /* #14532D */
+    --panel-line: 36 104 63; /* #24683F */
+    --panel-hover: 24 94 52; /* #185E34 */
+    --panel-active: 30 107 62; /* #1E6B3E */
+    --panel-ind: 140 198 63; /* #8CC63F */
+    --panel-key: 47 122 75; /* #2F7A4B */
+    --panel-key-bg: 24 94 52; /* #185E34 */
+    --panel-text: 211 231 215; /* #D3E7D7 */
+    --panel-strong: 255 255 255; /* #FFFFFF */
+    --panel-mid: 156 196 166; /* #9CC4A6 */
+    --lcd: 15 66 36; /* #0F4224 */
+    --lcd-digit: 140 198 63; /* #8CC63F */
+    --lcd-unit: 63 175 70; /* #3FAF46 */
+    --lcd-warn: 255 176 32; /* #FFB020 */
+    --lcd-bad: 255 138 128; /* #FF8A80 */
+    --panel-logo-a1: 95 208 138; /* #5FD08A — pe #14532D, #0B8C4A nu se vede */
+    --panel-logo-letters: 255 255 255; /* #FFFFFF */
+    --chart-bar: 63 175 70; /* #3FAF46 */
+    --chart-now: 20 83 45; /* #14532D */
+  }
+
+  /* Întunecat (ales pe 15.10.2026 după previzualizare): tot se redefinește. Butonul e verdele din mijloc cu text închis
+     (varianta I1), linkurile și focusul verdele deschis; pubelele își păstrează sensul, doar mai deschise. */
+  [data-theme="intunecat"] {
+    color-scheme: dark;
+
+    --surface: 19 26 22; /* #131A16 */
+    --surface-muted: 26 35 30; /* #1A231E */
+    --surface-sunken: 30 39 34; /* #1E2722 */
+    --border-subtle: 38 48 42; /* #26302A */
+    --border-strong: 61 74 66; /* #3D4A42 */
+    --content: 230 236 231; /* #E6ECE7 — 14,8:1 */
+    --content-strong: 203 213 206; /* #CBD5CE */
+    --content-muted: 163 176 168; /* #A3B0A8 — 7,9:1 */
+    --content-subtle: 133 147 139; /* #85938B — 5,5:1 */
+    --content-title: 220 239 208; /* #DCEFD0 */
+    --brand: 63 175 70; /* #3FAF46 — butonul I1, cu text închis: 6,1:1 */
+    --brand-hover: 82 189 88; /* #52BD58 */
+    --brand-edge: 43 138 53; /* #2B8A35 */
+    --brand-fg: 10 31 18; /* #0A1F12 */
+    --link: 140 198 63; /* #8CC63F — 8,7:1 */
+    --brand-muted: 27 43 31; /* #1B2B1F */
+    --brand-line: 46 74 52; /* #2E4A34 */
+    --focus: 140 198 63; /* #8CC63F */
+    --mark-text: 140 198 63; /* #8CC63F */
+    --mark-line: 63 175 70; /* #3FAF46 */
+    --brand-50: 22 38 27; /* #16261B — scara întoarsă: 700 rămâne culoarea linkurilor */
+    --brand-100: 27 43 31; /* #1B2B1F */
+    --brand-200: 46 74 52; /* #2E4A34 */
+    --brand-300: 43 138 53; /* #2B8A35 */
+    --brand-400: 52 160 60; /* #34A03C */
+    --brand-500: 63 175 70; /* #3FAF46 */
+    --brand-600: 82 189 88; /* #52BD58 */
+    --brand-700: 140 198 63; /* #8CC63F */
+    --brand-800: 207 230 180; /* #CFE6B4 */
+    --brand-900: 225 240 211; /* #E1F0D3 */
+    --brand-950: 241 248 234; /* #F1F8EA */
+    --state-ok: 63 175 70; /* #3FAF46 */
+    --state-ok-text: 140 198 63; /* #8CC63F */
+    --state-warn: 245 158 11; /* #F59E0B */
+    --state-warn-text: 247 185 85; /* #F7B955 */
+    --state-bad: 240 68 56; /* #F04438 */
+    --state-bad-text: 255 138 128; /* #FF8A80 */
+    --state-off: 74 85 79; /* #4A554F */
+    --state-bad-fg: 26 8 6; /* #1A0806 */
+    --state-bad-bg: 44 22 20; /* #2C1614 */
+    --state-bad-line: 94 38 33; /* #5E2621 */
+    --state-warn-bg: 42 33 16; /* #2A2110 */
+    --state-warn-line: 90 68 21; /* #5A4415 */
+    --inbound: 28 111 209; /* #1C6FD1 */
+    --inbound-key: 21 91 173; /* #155BAD */
+    --inbound-border: 15 69 134; /* #0F4586 */
+    --inbound-fg: 255 255 255; /* #FFFFFF */
+    --inbound-text: 111 168 240; /* #6FA8F0 */
+    --bin-paper: 76 139 230; /* #4C8BE6 */
+    --bin-plastic: 233 182 0; /* #E9B600 */
+    --bin-glass: 76 175 92; /* #4CAF5C */
+    --bin-bio: 176 128 90; /* #B0805A */
+    --bin-residual: 140 140 140; /* #8C8C8C */
+    --bin-hazard: 239 77 90; /* #EF4D5A */
+    --bin-metal: 166 174 181; /* #A6AEB5 */
+    --chart-bar: 58 143 69; /* #3A8F45 */
+    --chart-now: 140 198 63; /* #8CC63F */
+    --panel: 13 19 16; /* #0D1310 */
+    --panel-edge: 31 40 35; /* #1F2823 */
+    --panel-line: 34 44 38; /* #222C26 */
+    --panel-hover: 21 29 24; /* #151D18 */
+    --panel-active: 28 39 32; /* #1C2720 */
+    --panel-ind: 140 198 63; /* #8CC63F */
+    --panel-key: 52 65 58; /* #34413A */
+    --panel-key-bg: 21 29 24; /* #151D18 */
+    --panel-text: 195 210 200; /* #C3D2C8 */
+    --panel-strong: 255 255 255; /* #FFFFFF */
+    --panel-mid: 143 161 151; /* #8FA197 */
+    --lcd: 8 12 10; /* #080C0A */
+    --lcd-digit: 140 198 63; /* #8CC63F */
+    --lcd-unit: 63 175 70; /* #3FAF46 */
+    --lcd-warn: 255 176 32; /* #FFB020 */
+    --lcd-bad: 255 107 94; /* #FF6B5E */
+    --logo-a1: 95 208 138; /* #5FD08A */
+    --logo-a2: 63 175 70; /* #3FAF46 */
+    --logo-a3: 140 198 63; /* #8CC63F */
+    --logo-letters: 255 255 255; /* #FFFFFF */
+    --panel-logo-a1: 95 208 138; /* #5FD08A */
+    --panel-logo-letters: 255 255 255; /* #FFFFFF */
+    --scrim: rgb(0 0 0 / 0.6);
+    --shadow-popover: 0 18px 40px -12px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(61 74 66);
+  }
 }
 
 html,

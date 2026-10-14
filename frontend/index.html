@@ -11,6 +11,14 @@
     <!-- Iconița de pe ecranul principal al telefonului (iOS nu citește SVG-ul de mai sus). -->
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
     <title>ECO360</title>
+    <!-- Tema aleasă din Setări (`src/lib/theme.ts`), pusă înainte de bundle ca pagina să nu clipească în Luminos.
+         Cheia și valorile trebuie să rămână ca în `theme.ts`; Luminos = fără atribut. -->
+    <script>
+      try {
+        var t = localStorage.getItem("eco360.tema");
+        if (t === "padure" || t === "intunecat") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

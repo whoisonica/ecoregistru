@@ -1223,7 +1223,7 @@ export function WeighingOperationDialog({
               {strings.common.close}
             </Button>
             <Button
-              className="bg-state-bad text-white hover:bg-state-bad"
+              className="bg-state-bad text-state-bad-fg hover:bg-state-bad"
               onClick={handleCancel}
               disabled={!cancelReason.trim() || cancelMut.isPending}
             >

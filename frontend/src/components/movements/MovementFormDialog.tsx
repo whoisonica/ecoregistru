@@ -1092,7 +1092,7 @@ export function MovementFormDialog({
         <div>
           <Label htmlFor="mv-code-rd">
             {t.operationCode}
-            <span className="text-red-600"> *</span>
+            <span className="text-state-bad-text"> *</span>
           </Label>
           <Select
             id="mv-code-rd"
@@ -1250,7 +1250,7 @@ export function MovementFormDialog({
         {Object.keys(errors).length > 0 && (
           <p
             role="alert"
-            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            className="rounded-md border border-state-bad-line bg-state-bad-bg px-3 py-2 text-sm text-state-bad-text"
           >
             {errors.form ?? strings.common.fixErrors}
           </p>
@@ -1461,7 +1461,7 @@ export function MovementFormDialog({
           )}
 
           {isLegacyExit && (
-            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+            <p className="rounded-md border border-state-bad-line bg-state-bad-bg px-3 py-2 text-xs text-state-bad-text">
               {t.legacyExitHint}
             </p>
           )}
@@ -1812,7 +1812,7 @@ export function MovementFormDialog({
                       type="button"
                       onClick={() => handleDeleteAttachment(a.id)}
                       disabled={deleteAttachmentMut.isPending && deleteAttachmentMut.variables?.attachmentId === a.id}
-                      className="shrink-0 text-content-subtle hover:text-red-600 disabled:opacity-40"
+                      className="shrink-0 text-content-subtle hover:text-state-bad-text disabled:opacity-40"
                       aria-label={strings.common.delete}
                     >
                       <Trash2 className="h-4 w-4" />

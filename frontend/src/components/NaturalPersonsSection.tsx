@@ -187,7 +187,7 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
         )}
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <p className="text-sm text-state-bad-text">{t.loadError}</p>}
 
       {!isError && (
         <>
@@ -251,7 +251,7 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-state-bad-text hover:bg-state-bad-bg"
                             onClick={() => handleDeactivate(p)}
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
@@ -275,7 +275,7 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-red-600 hover:bg-red-50"
+                                className="text-state-bad-text hover:bg-state-bad-bg"
                                 onClick={() => handleDelete(p)}
                               >
                                 <Trash2 className="mr-1 h-3.5 w-3.5" />
@@ -310,7 +310,7 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
           </>
         }
       >
-        {detail.isError && <p className="mb-3 text-sm text-red-600">{t.loadOneError}</p>}
+        {detail.isError && <p className="mb-3 text-sm text-state-bad-text">{t.loadOneError}</p>}
         <form id="natural-person-form" onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="np-name">{t.name}</Label>
@@ -326,7 +326,7 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
               data-invalid={nameError || undefined}
               autoFocus
             />
-            {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {nameError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
           </div>
           <div>
             <Label htmlFor="np-cnp">{t.cnp}</Label>
@@ -345,7 +345,7 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
               data-invalid={cnpError || undefined}
             />
             {cnpError ? (
-              <p className="mt-1 text-xs text-red-600">{t.cnpInvalid}</p>
+              <p className="mt-1 text-xs text-state-bad-text">{t.cnpInvalid}</p>
             ) : (
               <p className="mt-1 text-xs text-content-muted">{t.cnpHint}</p>
             )}

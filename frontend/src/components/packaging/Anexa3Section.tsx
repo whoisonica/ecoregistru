@@ -93,13 +93,13 @@ export function Anexa3Section({ year }: { year: number }) {
 
       {/* Profilul n-a spus care tabel se aplică: nu tipărim nimic şi spunem de ce. */}
       {data && !data.printable && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div className="mt-4 rounded-lg border border-state-warn-line bg-state-warn-bg p-4">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-state-warn-text" />
             <div>
-              <p className="text-sm font-medium text-amber-900">{t.anexa3RoleMissing}</p>
-              <p className="mt-1 text-sm text-amber-800">{t.anexa3RoleMissingHint}</p>
-              <p className="mt-2 text-xs text-amber-700">{t.anexa3RoleMissingAction}</p>
+              <p className="text-sm font-medium text-state-warn-text">{t.anexa3RoleMissing}</p>
+              <p className="mt-1 text-sm text-state-warn-text">{t.anexa3RoleMissingHint}</p>
+              <p className="mt-2 text-xs text-state-warn-text">{t.anexa3RoleMissingAction}</p>
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ export function Anexa3Section({ year }: { year: number }) {
           </p>
 
           {(missingOrigin > 0 || missingMaterial > 0 || missingQuantity > 0) && (
-            <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <div className="mt-3 rounded-md border border-state-warn-line bg-state-warn-bg p-3 text-sm text-state-warn-text">
               <p className="font-medium">{t.anexa3UnclassifiedTitle}</p>
               {missingOrigin > 0 && (
                 <p className="mt-1">

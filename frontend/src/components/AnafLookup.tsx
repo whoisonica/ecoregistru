@@ -112,10 +112,10 @@ export function CuiField({
           role="status"
           className={
             note.tone === "error"
-              ? "mt-1 text-xs text-red-600"
+              ? "mt-1 text-xs text-state-bad-text"
               : note.tone === "warn"
-                ? "mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900"
-                : "mt-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs text-emerald-900"
+                ? "mt-1 rounded-md border border-state-warn-line bg-state-warn-bg px-2 py-1.5 text-xs text-state-warn-text"
+                : "mt-1 rounded-md border border-brand-line bg-brand-muted px-2 py-1.5 text-xs text-brand-700"
           }
         >
           {note.text}

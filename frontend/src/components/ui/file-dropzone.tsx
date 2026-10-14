@@ -145,7 +145,7 @@ export function FileDropzone({
               <button
                 type="button"
                 onClick={() => removeAt(index)}
-                className="shrink-0 text-content-subtle hover:text-red-600"
+                className="shrink-0 text-content-subtle hover:text-state-bad-text"
                 aria-label={strings.fileDropzone.remove}
               >
                 <X className="h-4 w-4" />

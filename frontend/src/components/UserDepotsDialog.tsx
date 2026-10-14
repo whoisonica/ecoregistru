@@ -103,7 +103,7 @@ export function UserDepotsDialog({
                 <span>{wp.name}</span>
               </label>
             ))}
-            {missing && <p className="text-xs text-red-600">{t.depotsRequired}</p>}
+            {missing && <p className="text-xs text-state-bad-text">{t.depotsRequired}</p>}
           </fieldset>
         )}
       </div>

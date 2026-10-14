@@ -156,7 +156,7 @@ export function AccountRequestsSection({
       <p className="mt-1 text-sm text-content-muted">{t.adminSubtitle}</p>
 
       <div className="mt-3">
-        {isError && <p className="text-sm text-red-600">{t.adminLoadError}</p>}
+        {isError && <p className="text-sm text-state-bad-text">{t.adminLoadError}</p>}
 
         {!isError && (
           <>
@@ -261,7 +261,7 @@ export function AccountRequestsSection({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="whitespace-nowrap text-red-600 hover:bg-red-50"
+                              className="whitespace-nowrap text-state-bad-text hover:bg-state-bad-bg"
                               disabled={busy}
                               onClick={() => openReject(r)}
                             >

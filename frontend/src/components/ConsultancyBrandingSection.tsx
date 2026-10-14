@@ -115,7 +115,7 @@ export function ConsultancyBrandingSection() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="text-red-600 hover:bg-red-50"
+                    className="text-state-bad-text hover:bg-state-bad-bg"
                     disabled={busy}
                     onClick={handleRemove}
                   >
@@ -151,6 +151,7 @@ export function ConsultancyBrandingSection() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-content-muted">
               {t.preview}
             </p>
+            {/* Foaia tipărită, nu ecranul: rămâne albă cu text negru pe orice temă, ca documentul adevărat. */}
             <div className="rounded border border-line bg-white p-4 shadow-sm">
               {hasHeader ? (
                 <div className="flex items-center justify-between gap-4 border-b border-gray-300 pb-2">

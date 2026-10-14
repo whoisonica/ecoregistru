@@ -163,7 +163,7 @@ export function InternalGeneratorsSection({
       </div>
 
       {canManage && activeWorkPoints.length === 0 && (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-md border border-state-warn-line bg-state-warn-bg px-3 py-2 text-sm text-state-warn-text">
           {t.noWorkPoints}
         </p>
       )}
@@ -222,7 +222,7 @@ export function InternalGeneratorsSection({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-state-bad-text hover:bg-state-bad-bg"
                             onClick={() => handleDeactivate(g)}
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
@@ -289,7 +289,7 @@ export function InternalGeneratorsSection({
               placeholder={t.namePlaceholder}
               autoFocus
             />
-            {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {nameError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
           </div>
           <div>
             <Label htmlFor="ig-description">{t.description}</Label>

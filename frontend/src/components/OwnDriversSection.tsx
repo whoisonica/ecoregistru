@@ -222,7 +222,7 @@ export function OwnDriversSection({
         )}
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <p className="text-sm text-state-bad-text">{t.loadError}</p>}
 
       {!isError && (
         <>
@@ -282,7 +282,7 @@ export function OwnDriversSection({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-state-bad-text hover:bg-state-bad-bg"
                             onClick={() => handleDeactivate(d)}
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
@@ -297,7 +297,7 @@ export function OwnDriversSection({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:bg-red-50"
+                              className="text-state-bad-text hover:bg-state-bad-bg"
                               onClick={() => handleDelete(d)}
                             >
                               <Trash2 className="mr-1 h-3.5 w-3.5" />
@@ -345,7 +345,7 @@ export function OwnDriversSection({
               placeholder={t.namePlaceholder}
               autoFocus
             />
-            {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {nameError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
           </div>
           <div>
             <Label htmlFor="d-identification">{t.identification}</Label>

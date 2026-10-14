@@ -42,7 +42,7 @@ export function BillingBanner() {
       role="status"
       className={cn(
         "mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border px-4 py-3 text-sm",
-        danger ? "border-red-300 bg-red-50 text-red-900" : "border-amber-300 bg-amber-50 text-amber-900"
+        danger ? "border-state-bad-line bg-state-bad-bg text-state-bad-text" : "border-state-warn-line bg-state-warn-bg text-state-warn-text"
       )}
     >
       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />

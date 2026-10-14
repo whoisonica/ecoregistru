@@ -338,7 +338,7 @@ export function CompanyUsersSection({
                               variant="ghost"
                               size="sm"
                               aria-label={t.cancelInvite}
-                              className="text-red-600 hover:bg-red-50"
+                              className="text-state-bad-text hover:bg-state-bad-bg"
                               onClick={() => handleCancelInvite(u)}
                             >
                               <X className="mr-1 h-3.5 w-3.5" />
@@ -356,7 +356,7 @@ export function CompanyUsersSection({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-state-bad-text hover:bg-state-bad-bg"
                             onClick={() => handleDeactivate(u)}
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
@@ -409,7 +409,7 @@ export function CompanyUsersSection({
               autoFocus
             />
             {emailError && (
-              <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+              <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>
             )}
           </div>
           <div>

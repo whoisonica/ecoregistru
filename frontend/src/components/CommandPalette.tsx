@@ -152,7 +152,7 @@ export function CommandPalette({
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-start justify-center p-4 pt-[10vh]">
       <div
-        className="absolute inset-0 animate-fade-in bg-black/40"
+        className="absolute inset-0 animate-fade-in bg-scrim"
         onClick={() => setOpen(false)}
         aria-hidden
       />

@@ -38,8 +38,8 @@ const buttonVariants = cva(
         // Pentru fapta care nu se ia înapoi. Până acum se scria pe loc, ca
         // `className="text-red-600 hover:bg-red-50"` pe un buton ghost — de patru ori, cu patru
         // nuanțe ușor diferite.
-        danger: "border-state-bad bg-state-bad text-white hover:border-state-bad-text hover:bg-state-bad-text",
-        "danger-ghost": "border-transparent text-state-bad-text hover:bg-red-50",
+        danger: "border-state-bad bg-state-bad text-state-bad-fg hover:border-state-bad-text hover:bg-state-bad-text",
+        "danger-ghost": "border-transparent text-state-bad-text hover:bg-state-bad-bg",
       },
       size: {
         default: "h-10 px-4",
@@ -91,7 +91,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             "key ml-2 hidden sm:inline-grid",
             variant === "outline" || variant === "ghost" || variant === "danger-ghost"
               ? "key-light"
-              : "border-white/40 bg-transparent text-white"
+              : "border-current bg-transparent opacity-70"
           )}
         >
           {hotkey}

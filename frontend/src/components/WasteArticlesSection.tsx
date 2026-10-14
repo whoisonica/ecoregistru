@@ -254,7 +254,7 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-state-bad-text hover:bg-state-bad-bg"
                             onClick={() => handleDeactivate(a)}
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
@@ -307,7 +307,7 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
               data-invalid={nameError || undefined}
               autoFocus
             />
-            {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {nameError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
           </div>
           <div>
             <Label htmlFor="wa-code">{t.code}</Label>
@@ -323,7 +323,7 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
               invalid={codeError ? "wa-code-error" : undefined}
             />
             {codeError && (
-              <p id="wa-code-error" className="mt-1 text-xs text-red-600">
+              <p id="wa-code-error" className="mt-1 text-xs text-state-bad-text">
                 {strings.common.requiredField}
               </p>
             )}
@@ -392,7 +392,7 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
           <p className="-mt-2 text-xs text-content-muted">
             {sourceId ? t.baleWeightHint : t.baleSourceHint}
           </p>
-          {baleError && <p className="-mt-2 text-xs text-red-600">{t.baleIncomplete}</p>}
+          {baleError && <p className="-mt-2 text-xs text-state-bad-text">{t.baleIncomplete}</p>}
         </form>
       </Dialog>
 

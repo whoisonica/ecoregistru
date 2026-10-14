@@ -181,7 +181,7 @@ export function CompanyForm({ company }: { company: Company }) {
               placeholder={t.namePlaceholder}
             />
             {formError === "name" && (
-              <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+              <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>
             )}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -197,7 +197,7 @@ export function CompanyForm({ company }: { company: Company }) {
                 placeholder={t.cuiPlaceholder}
                 error={
                   (formError === "cui" || formError === "cuiInvalid") && (
-                    <p className="mt-1 text-xs text-red-600">
+                    <p className="mt-1 text-xs text-state-bad-text">
                       {formError === "cui" ? strings.common.requiredField : strings.common.cuiInvalid}
                     </p>
                   )

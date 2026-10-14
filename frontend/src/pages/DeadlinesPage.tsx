@@ -484,7 +484,7 @@ function DeadlinesTable({
                         className={cn(
                           "block text-xs",
                           d.status === "OVERDUE"
-                            ? "text-red-600"
+                            ? "text-state-bad-text"
                             : "text-content-subtle",
                         )}
                       >

@@ -62,6 +62,7 @@ import { registersFor } from "@/lib/movementScreens";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
 import { CompanyUsersSection } from "@/components/CompanyUsersSection";
 import { AuditLogSection } from "@/components/AuditLogSection";
+import { AppearanceSection } from "@/components/AppearanceSection";
 import { SETTINGS_CARD } from "@/components/ui/card";
 import { useInternalGenerators } from "@/hooks/useInternalGenerators";
 import { useUsers } from "@/hooks/useUsers";
@@ -294,7 +295,7 @@ export function SettingsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-state-bad-text hover:bg-state-bad-bg"
                             onClick={() => handleDeactivate(wp)}
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
@@ -439,7 +440,7 @@ export function SettingsPage() {
               }}
               autoFocus
             />
-            {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {nameError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
           </div>
           <div>
             <Label htmlFor="wp-address">{t.address}</Label>
@@ -619,7 +620,7 @@ function SettingsHub({
                         <span
                           className={
                             "mt-2.5 block font-mono text-xs " +
-                            (card.summary.bad ? "text-red-700" : "text-content-strong")
+                            (card.summary.bad ? "text-state-bad-text" : "text-content-strong")
                           }
                         >
                           {card.summary.text}
@@ -636,6 +637,7 @@ function SettingsHub({
             </ul>
           </section>
         ))}
+        <AppearanceSection />
       </div>
     </div>
   );

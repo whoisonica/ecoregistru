@@ -212,7 +212,7 @@ export function ConsultanciesSection() {
               autoFocus
             />
             {formError === "name" && (
-              <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+              <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>
             )}
           </div>
           <CuiField
@@ -227,7 +227,7 @@ export function ConsultanciesSection() {
             invalid={{ "aria-invalid": formError === "cui" || formError === "cuiInvalid" }}
             error={
               (formError === "cui" || formError === "cuiInvalid") && (
-                <p className="mt-1 text-xs text-red-600">
+                <p className="mt-1 text-xs text-state-bad-text">
                   {formError === "cui" ? strings.common.requiredField : strings.common.cuiInvalid}
                 </p>
               )
@@ -278,7 +278,7 @@ export function ConsultanciesSection() {
               aria-invalid={emailError}
               autoFocus
             />
-            {emailError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {emailError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>

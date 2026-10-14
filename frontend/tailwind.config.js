@@ -119,6 +119,12 @@ export default {
           bad: v("state-bad"),
           "bad-text": v("state-bad-text"),
           off: v("state-off"),
+          // Mesajele de eroare și avertismentele de pe pagină (fondul și chenarul lor) și textul butonului „danger”.
+          "bad-fg": v("state-bad-fg"),
+          "bad-bg": v("state-bad-bg"),
+          "bad-line": v("state-bad-line"),
+          "warn-bg": v("state-warn-bg"),
+          "warn-line": v("state-warn-line"),
         },
         // Pubelele, pe codul de deșeu (`lib/binColor.ts`): o listă explicită, nu un prefix ghicit.
         bin: {

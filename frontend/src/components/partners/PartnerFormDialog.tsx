@@ -534,15 +534,15 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                 ăsta, singurul semn era titlul — iar cine tocmai a apăsat pe o sugestie se uită la
                 locul unde a apăsat, nu la antet. */}
             {switchedFrom !== null && editing && (
-              <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 sm:flex-row sm:items-center">
-                <p className="min-w-0 flex-1 text-xs text-amber-900">
+              <div className="flex flex-col gap-2 rounded-md border border-state-warn-line bg-state-warn-bg px-3 py-2 sm:flex-row sm:items-center">
+                <p className="min-w-0 flex-1 text-xs text-state-warn-text">
                   <strong className="font-medium">{t.suggestionSwitchedTitle}</strong>{" "}
                   {t.suggestionSwitchedHint.replace("{name}", switchedFrom)}
                 </p>
                 <button
                   type="button"
                   onClick={backToCreate}
-                  className="shrink-0 whitespace-nowrap text-xs font-medium text-amber-800 underline underline-offset-2"
+                  className="shrink-0 whitespace-nowrap text-xs font-medium text-state-warn-text underline underline-offset-2"
                 >
                   {t.suggestionSwitchedBack}
                 </button>
@@ -621,16 +621,16 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                     if (nameError) setNameError(false);
                   }}
                 />
-                {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+                {nameError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
                 {nameSuggestions.length > 0 && (
-                  <div className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5">
-                    <p className="text-xs font-medium text-amber-800">{t.nameSuggestions}</p>
+                  <div className="mt-1 rounded-md border border-state-warn-line bg-state-warn-bg px-2 py-1.5">
+                    <p className="text-xs font-medium text-state-warn-text">{t.nameSuggestions}</p>
                     <ul className="mt-0.5 space-y-0.5">
                       {nameSuggestions.map((p) => (
                         <li key={p.id}>
                           <button
                             type="button"
-                            className="text-xs text-amber-900 underline underline-offset-2"
+                            className="text-xs text-state-warn-text underline underline-offset-2"
                             onClick={() => openSuggested(p)}
                           >
                             {p.name}
@@ -640,7 +640,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-0.5 text-xs text-amber-700">{t.nameSuggestionsHint}</p>
+                    <p className="mt-0.5 text-xs text-state-warn-text">{t.nameSuggestionsHint}</p>
                   </div>
                 )}
               </div>
@@ -999,7 +999,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
+                        className="self-end text-state-bad-text hover:bg-state-bad-bg sm:mb-1"
                         onClick={() => setWorkPoints((prev) => prev.filter((_, i) => i !== index))}
                       >
                         {t.removeWorkPoint}
@@ -1098,7 +1098,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
+                            className="self-end text-state-bad-text hover:bg-state-bad-bg sm:mb-1"
                             onClick={() => setDrivers((prev) => prev.filter((_, i) => i !== index))}
                           >
                             {t.removeDriver}

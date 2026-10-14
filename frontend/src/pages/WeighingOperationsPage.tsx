@@ -250,7 +250,7 @@ export function WeighingOperationsPage() {
         !forms && !stockTab && <SiatdStrip onOpen={() => setScreenTab("siatd")} />
       )}
 
-      {!forms && !stockTab && isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {!forms && !stockTab && isError && <p className="text-sm text-state-bad-text">{t.loadError}</p>}
 
       {!forms && !stockTab && !isError && (
         <>

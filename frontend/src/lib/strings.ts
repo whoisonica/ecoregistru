@@ -1437,6 +1437,17 @@ export const strings = {
       authExpired: "Autorizația a expirat",
       authMissing: "Autorizația nu e completată",
     },
+    // Tema de culori (15.10.2026): a fiecărui om, ținută în browserul lui, nu a firmei.
+    appearance: {
+      title: "Aspect",
+      hint: "Se schimbă doar pe acest calculator. Documentele tipărite rămân pe alb.",
+      luminos: "Luminos",
+      luminosHint: "Pagina albă, meniul verde-deschis.",
+      padure: "Pădure",
+      padureHint: "Pagina albă, meniul verde-închis.",
+      intunecat: "Întunecat",
+      intunecatHint: "Fond închis, pentru lumină slabă.",
+    },
     // D1.8. Opțiunile numesc și suportul eco360: la „toată firma” îl include, iar omul trebuie
     // să știe asta când alege (proprietarul, 15.09.2026: platforma e tratată ca un consultant).
     prices: {

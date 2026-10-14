@@ -183,7 +183,7 @@ export function BalingDialog({
                 {strings.common.close}
               </Button>
               <Button
-                className="bg-state-bad text-white hover:bg-state-bad"
+                className="bg-state-bad text-state-bad-fg hover:bg-state-bad"
                 onClick={cancel}
                 disabled={!cancelReason.trim() || cancelMut.isPending}
               >
@@ -270,7 +270,7 @@ export function BalingDialog({
               selected={chosenId ? [chosenId] : []}
               onToggle={setArticleId}
             />
-            {showErrors && !chosen && <p className="mt-1 text-xs text-red-600">{b.articleRequired}</p>}
+            {showErrors && !chosen && <p className="mt-1 text-xs text-state-bad-text">{b.articleRequired}</p>}
           </div>
           <div>
             <Label htmlFor="baling-count">{b.count}</Label>
@@ -283,7 +283,7 @@ export function BalingDialog({
               aria-invalid={showErrors && !countOk}
               autoFocus
             />
-            {showErrors && !countOk && <p className="mt-1 text-xs text-red-600">{b.countRequired}</p>}
+            {showErrors && !countOk && <p className="mt-1 text-xs text-state-bad-text">{b.countRequired}</p>}
             {chosen && countOk && (
               <p className="mt-2 font-mono text-sm tabular-nums text-content" data-testid="baling-computed">
                 {b.computed(

@@ -191,13 +191,13 @@ function ImportScreen() {
           </dl>
 
           {result.errors.length === 0 ? (
-            <p className="mt-4 flex items-center gap-2 text-sm text-green-700">
+            <p className="mt-4 flex items-center gap-2 text-sm text-state-ok-text">
               <CheckCircle2 className="h-4 w-4" />
               {result.saved ? t.afterImport : t.noErrors}
             </p>
           ) : (
             <>
-              <p className="mt-4 text-sm font-medium text-red-700">
+              <p className="mt-4 text-sm font-medium text-state-bad-text">
                 {t.errorsTitle.replace("{n}", String(result.errors.length))}
               </p>
               <RowTable rows={result.errors} />

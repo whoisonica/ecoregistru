@@ -22,8 +22,8 @@ export function passwordStrength(value: string): 0 | 1 | 2 | 3 {
 }
 
 const LEVELS = [
-  { label: t.strength0, bar: "bg-red-500" },
-  { label: t.strength1, bar: "bg-amber-500" },
+  { label: t.strength0, bar: "bg-state-bad" },
+  { label: t.strength1, bar: "bg-state-warn" },
   { label: t.strength2, bar: "bg-brand" },
   { label: t.strength3, bar: "bg-brand" },
 ] as const;

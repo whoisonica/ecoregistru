@@ -68,7 +68,7 @@ function Block({ block }: { block: LegalBlock }) {
       );
     case "note":
       return (
-        <p className="rounded-md border-l-4 border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+        <p className="rounded-md border-l-4 border-state-warn-line bg-state-warn-bg px-4 py-3 text-state-warn-text">
           {inline(block.text)}
         </p>
       );

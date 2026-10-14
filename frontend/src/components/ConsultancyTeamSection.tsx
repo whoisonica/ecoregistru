@@ -218,7 +218,7 @@ export function ConsultancyTeamSection() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-state-bad-text hover:bg-state-bad-bg"
                             onClick={() => handleDeactivate(m)}
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
@@ -241,7 +241,7 @@ export function ConsultancyTeamSection() {
                               variant="ghost"
                               size="sm"
                               aria-label={u.cancelInvite}
-                              className="text-red-600 hover:bg-red-50"
+                              className="text-state-bad-text hover:bg-state-bad-bg"
                               onClick={() => handleCancelInvite(m)}
                             >
                               <X className="mr-1 h-3.5 w-3.5" />
@@ -293,7 +293,7 @@ export function ConsultancyTeamSection() {
               placeholder={u.emailPlaceholder}
               autoFocus
             />
-            {emailError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {emailError && <p className="mt-1 text-xs text-state-bad-text">{strings.common.requiredField}</p>}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
