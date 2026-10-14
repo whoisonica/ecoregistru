@@ -4,14 +4,15 @@
 mărcii WasteHouse. Numele de cod și infrastructura rămân `ecoregistru` (pachetul Java, Heroku, repo-ul), iar landingul
 rămâne wastehouse.ro.*
 
-- **Interfața urmează direcția „Cântar”: [`docs/stil-interfata.md`](docs/stil-interfata.md).** Panou grafit cu taste,
+- **Interfața urmează direcția „Cântar”: [`docs/stil-interfata.md`](docs/stil-interfata.md).** Panou cu taste în culorile logoului eco360,
   pagină albă, IBM Plex Sans + Mono, colțuri mici, nicio umbră, stări ca LED (pătrățel + cuvânt), pubela pe codul de
   deșeu. Orice ecran sau formular nou folosește primitivele din `frontend/src/components/ui` și tokenii din
   `frontend/tailwind.config.js` și `frontend/src/index.css`. Nu se scriu culori (`gray-*`, `bg-white`), colțuri sau
   umbre de mână. Fără pastile (`rounded-full`) în afara avatarului. Sub șapte opțiuni, într-un formular nou:
   `ChoiceCards` sau `PillGroup`, nu `Select`. Explicațiile: `Tooltip`, niciodată `title=`, și niciodată în jurul
   unui `Button`.
-- **Fără temă întunecată.** Panoul e grafit, pagina e albă: o singură lume de culori.
+- **Trei teme de culori** (15.10.2026): Luminos (implicit), Pădure, Întunecat, alese din Setări → Aspect. Orice culoare
+  nouă intră ca variabilă în toate temele din `index.css` și ca token în `tailwind.config.js` (tabelul din `stil-interfata.md`).
 - **Meniul și tastele se citesc din cod înainte de a propune ecrane** (`frontend/src/lib/navItems.ts`,
   `lib/movementScreens.ts`, `lib/screenTabs.ts`, `App.tsx`): proprietarul nu vrea să explice ce există deja. Un tab nou
   se scrie în `screenTabs.ts`: de acolo îl citesc și pagina, și panoul. În panou nu se pun la loc afișajul lunii,

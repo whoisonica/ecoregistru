@@ -30,13 +30,7 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 | Fonturi | `src/index.css` (`@font-face`), `tailwind.config.js` (`fontFamily`) | **IBM Plex Sans** (text) + **IBM Plex Mono** (cifre, CUI, coduri, date, etichete mici), servite din `public/fonts/` (OFL lângă fișiere), subseturi `latin` + `latin-ext`. **Nu** de pe Google Fonts: ar trimite IP-ul clientului unui terț |
 | Mărimi de text | `tailwind.config.js` (`fontSize`) | `text-sm` = 14,5px, `text-xs` = 12,5px; tabelele la 14px (`table.tsx`). Cifrele cu `tabular-nums` peste tot (`body`) |
 | Greutăți | `tailwind.config.js` (`fontWeight`) | `font-bold` cade pe **600**; 700 doar prin `font-extrabold`, pentru titluri mari |
-| Pagina | `bg-surface` | **alb** `#FFFFFF`; `bg-surface-muted` `#F4F6F4` pentru rândul evidențiat, `bg-surface-sunken` `#E8ECE9` pentru câmpuri dezactivate |
-| Linii | `border-line` / `border-line-strong` | `#E3E6E3` între rânduri / `#C9D0CC` la câmpuri și butoane; **linia de 2px `border-content`** sub capul de tabel și sub titlul unei secțiuni de formular |
-| Text | `text-content` · `-strong` · `-muted` · `-subtle` | `#161A18` · `#2B322E` · `#5C6660` · `#7E8880` |
-| Acțiunea principală | `bg-brand`, scara `brand-50…950` | Punctul Verde `#009A44`, apăsat `#007A36`, tasta `#00622F` |
-| Intrarea în depozit | `bg-inbound`, `variant="inbound"` la `Button` | albastru `#1C6FD1` — cealaltă direcție față de verde |
-| Panoul (bara stângă) | `bg-panel`, `-hover`, `-active`, `-line`, `-key`, `text-panel-text/-mid/-dim/-faint` | grafit `#1B201D`; intrarea activă `#2A322E` cu linie interioară de 3px `lcd-digit` la stânga |
-| Negrul de afișaj | `bg-lcd`, `text-lcd-digit/-unit/-warn/-bad` | `#0D1210` — plăcuța firmei (`CompanyLabel`); banda de telefon e `bg-panel` și ia de aici doar `text-lcd-digit/-warn/-bad`; `#7CF2A9` linia intrării active, galben `#FFB020` și roșu `#FF6B5E` la indicatori |
+| Culorile | `src/index.css` (variabile `--x` în canale RGB) + `tailwind.config.js` (`rgb(var(--x) / <alpha-value>)`) | **Trei teme** (15.10.2026), tabelul de mai jos. Clasele au rămas aceleași (`bg-brand`, `bg-panel`, `text-state-ok-text`…); doar valorile se schimbă după tema aleasă |
 | Stări | `Badge` (LED) · `text-state-ok/-warn/-bad-text` | **pătrățel de 8px + cuvânt**, nu pastilă colorată. Sensul nu se schimbă: verde = gata; **galben = o așteptare legitimă** (cântarul); **roșu = nu se poate depune așa** |
 | Pubela | `BinSwatch` + `lib/binColor.ts` | pătrățel de 10×12px înaintea codului de deșeu: albastru hârtie, galben plastic/metal-ambalaje, verde sticlă, maro bio, gri rezidual, roșu periculoase, gri-metal fier vechi. **Listă explicită cod → pubelă, nu prefix ghicit**; codul necunoscut n-are culoare. Galbenul pubelei nu înseamnă „așteaptă” |
 | Colțuri | scara `borderRadius` (înlocuită, nu extinsă) | 4–8px peste tot: `rounded-md` 5px butoane și câmpuri, `rounded-lg` 6px cutii; `rounded-xl/2xl/3xl` scrise în ecrane cad tot pe 6–8px. **Fără pastile.** `rounded-full` doar pentru avatar și rotița de încărcare |
@@ -44,7 +38,37 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 | Tasta | `.key` + `.key-dark` / `.key-light` (`index.css`) | chenar de 1px, „grosime” de 3px jos, mono 10,5px. Butoanele o arată prin `hotkey="N"` |
 | Eticheta mică | `.eyebrow` | mono 11px, majuscule, spațiere 0,07em — capul de tabel, eticheta unui total |
 
-**Fără temă întunecată.** Panoul e grafit, pagina e albă — o singură lume de culori, cerută explicit.
+### Temele de culori (15.10.2026)
+
+Grafitul de la 15.09 a fost înlocuit de culorile logoului eco360. Omul alege tema din **Setări → Aspect** (`AppearanceSection`);
+alegerea stă în browserul lui (`localStorage`, cheia `eco360.tema`, `lib/theme.ts`), nu pe firmă, și se pune pe `<html data-theme>`
+înainte de bundle, din scriptul din `index.html`. **Luminos** e implicit (fără atribut, valorile de pe `:root`); **Pădure** schimbă doar
+panoul, logoul de pe panou și graficul; **Întunecat** schimbă tot (`color-scheme: dark`). Temele stau sub `@media screen`, deci ce se
+tipărește din browser iese pe Luminos, pe alb. Planul și hotărârile: `ecoregistru-docs/docs/specs/2026-10-14-teme-culori-plan.md`.
+
+| Ce | Clasele | Luminos | Pădure | Întunecat |
+|---|---|---|---|---|
+| Pagina | `bg-surface` · `-muted` · `-sunken` | `#FFFFFF` · `#F4F6F4` · `#E8ECE9` | ca Luminos | `#131A16` · `#1A231E` · `#1E2722` |
+| Linii | `border-line` · `-strong` | `#E3E6E3` · `#C9D0CC` | ca Luminos | `#26302A` · `#3D4A42` |
+| Text | `text-content` · `-strong` · `-muted` · `-subtle` | `#161A18` · `#2B322E` · `#5C6660` · `#6B756E` | ca Luminos | `#E6ECE7` · `#CBD5CE` · `#A3B0A8` · `#85938B` |
+| Titlul paginii | `text-content-title` | `#14532D` | ca Luminos | `#DCEFD0` |
+| Butonul principal | `bg-brand` / `text-brand-fg` | `#0B8C4A` cu alb (4,3:1, acceptat) | ca Luminos | `#3FAF46` cu `#0A1F12` |
+| Linkurile | `text-brand`, `text-brand-700` | `#14532D` | ca Luminos | `#8CC63F` (scara `brand-50…950` e întoarsă) |
+| Focusul | `ring-focus` | `#0B8C4A` | ca Luminos | `#8CC63F` |
+| Login, cererea de cont | `text-mark`, `bg-mark` | `#0A7D42`, linia `#0B8C4A` | ca Luminos | `#8CC63F`, linia `#3FAF46` |
+| Intrarea în depozit | `bg-inbound`, `text-inbound-text` | `#1C6FD1` | ca Luminos | `#1C6FD1`, textul `#6FA8F0` |
+| Panoul (bara stângă) | `bg-panel`, `-hover`, `-active`, `-ind`, `text-panel-text` · `-strong` · `-mid` | verde-deschis `#F4F9EF`, rândul activ alb cu linia `#3FAF46`, text `#2F4A37` | verde-închis `#14532D`, rândul activ `#1E6B3E` cu linia `#8CC63F`, text `#D3E7D7`, `-mid` `#B4D6BC` | `#0D1310`, rândul activ `#1C2720`, text `#C3D2C8` |
+| Indicatorii de pe panou | `text-lcd-digit` · `-warn` · `-bad`, `bg-lcd` (plăcuța firmei) | `#0A7D42` · `#8A4B00` · `#B42318`, plăcuța albă | `#A3D65C` · `#FFC24D` · `#FFB3AB` (peste 4,5:1 și pe rândul ales) | `#8CC63F` · `#FFB020` · `#FF6B5E` |
+| Logoul | `BrandName` (`--logo-a1…a3`, `--logo-letters`) | săgețile `#0B8C4A` `#3FAF46` `#8CC63F`, literele `#14532D` | pe panou literele albe, prima săgeată `#5FD08A` | literele albe, prima săgeată `#5FD08A` |
+| Stările | `state-ok/-warn/-bad` (+ `-text`, `-bg`, `-line`, `-fg`) | verde `#3FAF46`, galben `#F59E0B`, roșu `#D92D20` | ca Luminos | aceleași sensuri, textele mai deschise (`#8CC63F`, `#F7B955`, `#FF8A80`); butonul „danger” `#F04438` cu text închis |
+| Pubelele | `bg-bin-*` | culorile pubelelor | ca Luminos | aceleași, mai deschise |
+| Graficul de pe Acasă | `bg-chart-bar`, `bg-chart-now` | `#8CC63F`, luna curentă `#0B8C4A` | `#3FAF46`, luna curentă `#14532D` | `#3A8F45`, luna curentă `#8CC63F` |
+
+**O culoare nouă** se adaugă ca variabilă în toate trei blocurile din `index.css` (`:root`, `[data-theme="padure"]` dacă ține de panou,
+`[data-theme="intunecat"]` mereu) și ca token în `tailwind.config.js`; niciodată ca hex sau ca `gray-*` în ecran. Excepțiile scrise de
+mână, dinadins: previzualizarea foii din `ConsultancyBrandingSection` (e hârtia tipărită), butonul alb al `Switch` și miniaturile din
+`AppearanceSection` (arată fiecare tema, oricare ar fi cea aleasă). Contrastul se verifică pe toate trei temele cu
+`node e2e/shots-teme-toate.mjs <dir> <tema>`, care scrie în `raport.txt` fiecare text sub 4,5:1.
 
 ---
 
@@ -108,7 +132,7 @@ panoul; Ctrl K deschide paleta (`CommandPalette`). Tastele tac în câmpuri de t
 | `FormSection` | Titlul unei secțiuni dintr-un formular, cu linia de 2px sub el |
 | `PageHeader` | Titlul paginii (26px, 600), o propoziție sub el, acțiunile la dreapta |
 | `ChoiceCards` | O alegere între 2–6 variante, fiecare cu o propoziție. Radio nativ dedesubt |
-| `PillGroup` | Răspunsuri scurte ca **taste**: cea apăsată e grafit cu text alb. Codul oficial stă mic lângă cuvinte |
+| `PillGroup` | Răspunsuri scurte ca **taste**: cea apăsată e în culoarea textului, cu literele pe fondul paginii (închisă pe Luminos, deschisă pe Întunecat). Codul oficial stă mic lângă cuvinte |
 | `Switch` | Un da/nu cu o propoziție |
 | `Stepper` | Un formular împărțit pe întrebări. **Împarte, nu rearanjează** ordinea rubricilor |
 | `SectionNav` | Cuprinsul unei pagini lungi, ca taste; secțiunea curentă e grafit (fișa firmei, `/clienti/:id`). **Nu** în Setări: acolo pagina de start are carduri pe grupuri, cu starea pe scurt, iar fiecare secțiune stă pe `/setari/<id>` (17.09.2026). **Nu** într-un tab: un cuprins înăuntrul unui tab e tab în tab — de asta a plecat de pe Ambalaje (18.09.2026) |
@@ -152,8 +176,8 @@ ce vrea pagina să arate — pe login trei tile-uri albe cu ecrane care chiar ex
 control), pe cerere cuprinsul formularului (`PosterStep`, un `ol`) și trei „fapte” cu punct verde (`PosterFact`).
 **Dreapta, alb**: formularul, cu rubrici de 48px (`h-12`), titlul de 32px, linkul spre cealaltă pagină în colț și
 subsolul juridic o singură dată. **Butoanele principale și linkurile de aici sunt în `mark`** (`publicButtonClass`),
-verdele landingului `#047857`, nu `brand`-ul aplicației: cine vine de pe wastehouse.ro nu simte că a schimbat
-site-ul. Tokenul `mark` (`DEFAULT` · `hover` · `soft`) stă în `tailwind.config.js` și e doar pentru paginile publice.
+din 15.10.2026 aliniat la verdele eco360 (butonul e `bg-brand`, textele `text-mark` `#0A7D42`); până atunci era verdele landingului
+`#047857`. Tokenul `mark` stă în `tailwind.config.js` și e doar pentru paginile publice; ia și el tema aleasă.
 Pe telefon coloana din stânga devine o bandă în capul paginii; loginul își ascunde tile-urile, cererea își ține pașii.
 
 **Cererea e în patru pași, aproape totul obligatoriu** (proprietarul, 16.09.2026, seara: „nu e prea lung?” la 22 de
