@@ -50,7 +50,7 @@
   --brand-muted: 241 248 234; /* #F1F8EA — rândul selectat, sfaturi */
   --brand-line: 207 230 180; /* #CFE6B4 — chenarul lor */
   --focus: 11 140 74; /* #0B8C4A — inelul de focus; 4,3:1 pe alb */
-  --mark-text: 11 140 74; /* #0B8C4A — login și cererea de cont: eticheta, accentul mare */
+  --mark-text: 10 125 66; /* #0A7D42 — login și cererea de cont: eticheta, linkurile, accentul mare; #0B8C4A dădea 4,3:1 pe alb */
   --mark-line: 11 140 74; /* #0B8C4A — login: linia de lângă etichetă, punctele */
   /* Scara verdelui, din cele patru culori ale logoului; 700 e culoarea linkurilor */
   --brand-50: 241 248 234; /* #F1F8EA */
@@ -139,12 +139,12 @@
     --panel-key-bg: 24 94 52; /* #185E34 */
     --panel-text: 211 231 215; /* #D3E7D7 */
     --panel-strong: 255 255 255; /* #FFFFFF */
-    --panel-mid: 156 196 166; /* #9CC4A6 */
+    --panel-mid: 180 214 188; /* #B4D6BC — 4,9:1 și pe rândul ales (#185E34) */
     --lcd: 15 66 36; /* #0F4224 */
-    --lcd-digit: 140 198 63; /* #8CC63F */
+    --lcd-digit: 163 214 92; /* #A3D65C — #8CC63F dădea 4,4:1 pe panou */
     --lcd-unit: 63 175 70; /* #3FAF46 */
-    --lcd-warn: 255 176 32; /* #FFB020 */
-    --lcd-bad: 255 138 128; /* #FF8A80 */
+    --lcd-warn: 255 194 77; /* #FFC24D — 4,9:1 și pe rândul ales */
+    --lcd-bad: 255 179 171; /* #FFB3AB — #FF8A80 dădea 4,0:1 */
     --panel-logo-a1: 95 208 138; /* #5FD08A — pe #14532D, #0B8C4A nu se vede */
     --panel-logo-letters: 255 255 255; /* #FFFFFF */
     --chart-bar: 63 175 70; /* #3FAF46 */

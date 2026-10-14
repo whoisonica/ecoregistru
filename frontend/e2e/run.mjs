@@ -60,6 +60,7 @@ const suites = [
   ["59-cantitate-kg.mjs", "cantitatea în kg fără zecimale, în tone cel mult trei"],
   ["60-energie.mjs", "Energie: fișa, Termene, dosarul, Acasă"],
   ["61-raport-mediu.mjs", "Raportul anual de mediu: anul, controale, monitorizări, autorizația, Termene, Word"],
+  ["62-teme.mjs", "Temele de culori: alegerea din Setări, reîncărcarea, login-ul în tema aleasă, 375px"],
 ];
 
 const only = process.argv[2];
