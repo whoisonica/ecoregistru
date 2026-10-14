@@ -78,7 +78,7 @@ function ImportScreen() {
     setBusy("template");
     try {
       const res = await api.get("/api/v1/import/sablon", { responseType: "blob" });
-      saveBlob(res.data as Blob, "sablon-import-wastehouse.xlsx");
+      saveBlob(res.data as Blob, "sablon-import-eco360.xlsx");
     } catch (err) {
       notify(await apiBlobErrorMessage(err, t.templateError), "error");
     } finally {

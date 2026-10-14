@@ -133,7 +133,7 @@ export function LegalDocument({ doc }: { doc: LegalDoc }) {
       <div className="mx-auto max-w-3xl px-4 py-10">
         <header className="text-center">
           <Link to="/login" className="inline-block">
-            <div className="text-2xl font-bold text-brand"><BrandName /></div>
+            <BrandName className="mx-auto h-14 w-14" />
             <div className="text-sm text-content-muted">{strings.tagline}</div>
           </Link>
         </header>

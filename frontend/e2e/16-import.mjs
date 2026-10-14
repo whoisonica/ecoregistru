@@ -52,7 +52,7 @@ const [download] = await Promise.all([
   page.waitForEvent("download", { timeout: 10000 }),
   page.click('button:has-text("Descarcă șablonul")'),
 ]);
-check("șablonul se descarcă", download.suggestedFilename() === "sablon-import-wastehouse.xlsx",
+check("șablonul se descarcă", download.suggestedFilename() === "sablon-import-eco360.xlsx",
   download.suggestedFilename());
 
 // Un fișier care nu e Excel: mesajul backendului ajunge pe ecran, „Importă” rămâne blocat.

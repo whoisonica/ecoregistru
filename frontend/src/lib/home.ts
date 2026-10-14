@@ -81,7 +81,7 @@ function icsText(s: string): string {
  */
 export function deadlinesIcs(deadlines: Deadline[], label: (d: Deadline) => string, now = new Date()): string {
   const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//WasteHouse//Termene//RO", "CALSCALE:GREGORIAN"];
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//eco360//Termene//RO", "CALSCALE:GREGORIAN"];
   for (const d of deadlines) {
     if (!d.id) continue;
     const day = d.dueDate.replace(/-/g, "");
@@ -89,6 +89,8 @@ export function deadlinesIcs(deadlines: Deadline[], label: (d: Deadline) => stri
     const next = new Date(Date.UTC(y, m - 1, dd + 1)).toISOString().slice(0, 10).replace(/-/g, "");
     lines.push(
       "BEGIN:VEVENT",
+      // Domeniul din UID rămâne wastehouse.ro și după redenumirea în eco360 (14.10.2026): un UID nou ar face din
+      // fiecare termen deja importat un eveniment dublat în calendarul omului, nu o actualizare.
       `UID:${d.id}@wastehouse.ro`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${day}`,

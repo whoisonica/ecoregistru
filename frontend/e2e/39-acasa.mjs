@@ -102,7 +102,7 @@ if (await buton.isEnabled()) {
   const ics = fs.readFileSync(await dl.path(), "utf8");
   const evenimente = (ics.match(/BEGIN:VEVENT/g) ?? []).length;
   const zile = (ics.match(/DTSTART;VALUE=DATE:\d{8}/g) ?? []).length;
-  check("fișierul se cheamă termene-wastehouse.ics", dl.suggestedFilename() === "termene-wastehouse.ics", dl.suggestedFilename());
+  check("fișierul se cheamă termene-eco360.ics", dl.suggestedFilename() === "termene-eco360.ics", dl.suggestedFilename());
   check("e un calendar cu câte o zi întreagă pe termen", ics.startsWith("BEGIN:VCALENDAR") && evenimente > 0 && zile === evenimente,
     `${evenimente} evenimente`);
 } else {

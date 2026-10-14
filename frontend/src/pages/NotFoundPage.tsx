@@ -31,7 +31,7 @@ export function NotFoundPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-surface-muted">
           <Compass className="h-6 w-6 text-content-subtle" aria-hidden />
         </div>
-        <div className="text-2xl font-bold text-brand"><BrandName /></div>
+        <BrandName className="mx-auto h-12 w-12" />
         <h1 className="mt-4 text-lg font-semibold text-content">{t.title}</h1>
         <p className="mt-2 text-sm text-content-muted">{t.body}</p>
         {/* Adresa cerută, scrisă întreagă: de cele mai multe ori greșeala se vede citind-o. */}

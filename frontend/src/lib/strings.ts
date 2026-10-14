@@ -3,7 +3,7 @@
  * extracted into an i18n framework later without hunting through components.
  */
 export const strings = {
-  appName: "WasteHouse",
+  appName: "eco360",
   tagline: "Evidența și raportarea gestiunii deșeurilor",
   // Rândul mic verde cu linie de deasupra titlului, pe paginile publice — același ca pe landing.
   publicKicker: "Evidența gestiunii deșeurilor",
@@ -406,7 +406,7 @@ export const strings = {
     profilePhone: "Telefonul",
     profileHelp: "Ajutor",
     workPointsCount: (n: number) => (n === 1 ? "1 punct de lucru" : `${n} puncte de lucru`),
-    about: "Despre WasteHouse",
+    about: "Despre eco360",
     aboutVersion: (v: string) => `Versiunea ${v}`,
     privacyPolicy: "Politica de confidențialitate",
     // Generare: același ecran, capul pe hârtie.
@@ -433,7 +433,7 @@ export const strings = {
     doneRejected: "Serverul a refuzat-o",
     doneRejectedSub: "Ce ai scris rămâne aici; apasă „Corectează” și trimite din nou.",
     donePhotoFailed: "Predarea e în registru, dar poza n-a urcat. Se reîncearcă singură.",
-    ticketTitle: "WASTEHOUSE · PREDARE",
+    ticketTitle: "ECO360 · PREDARE",
     ticketNo: "Nr.",
     ticketNoPending: "se dă la trimitere",
     ticketDate: "Data",
@@ -539,7 +539,7 @@ export const strings = {
       partners: "Deșeul se predă legal doar unui operator cu autorizație de mediu în termen.",
     } as Record<"deadlines" | "missingCode" | "weighing" | "partners", string>,
     inspectorOpen: "Modul inspector",
-    inspectorKicker: "WasteHouse · control",
+    inspectorKicker: "eco360 · control",
     inspectorClose: "Închide",
     inspectorCui: (cui: string) => `CUI ${cui}`,
     // --- Valul B, F9 (28.09.2026): „În calendar” pe Termene ---
@@ -582,7 +582,7 @@ export const strings = {
   resetPassword: {
     title: "Alege-ți parola",
     subtitle:
-      "Dacă ai fost invitat în WasteHouse, parola pe care o pui acum îți activează contul.",
+      "Dacă ai fost invitat în eco360, parola pe care o pui acum îți activează contul.",
     password: "Parolă nouă",
     confirmPassword: "Confirmă parola",
     rules: "Minim 8 caractere, cu literă mare, literă mică și cifră.",
@@ -767,7 +767,7 @@ export const strings = {
     codesMore: "și încă {n} pe „Totalul anului”: {kg} kg",
     timelineTitle: "Termenele pe următoarele 12 luni",
     timelineIcs: "Adaugă în calendar",
-    timelineIcsFile: "termene-wastehouse.ics",
+    timelineIcsFile: "termene-eco360.ics",
     timelineIcsHint: "Un fișier .ics pentru Google Calendar sau Outlook, cu memento cu 3 zile înainte.",
     // Numele scurt al termenului, pe coloana lunii. Cel întreg rămâne în `enums.reportType`.
     reportShort: {
@@ -1437,7 +1437,7 @@ export const strings = {
       authExpired: "Autorizația a expirat",
       authMissing: "Autorizația nu e completată",
     },
-    // D1.8. Opțiunile numesc și suportul WasteHouse: la „toată firma” îl include, iar omul trebuie
+    // D1.8. Opțiunile numesc și suportul eco360: la „toată firma” îl include, iar omul trebuie
     // să știe asta când alege (proprietarul, 15.09.2026: platforma e tratată ca un consultant).
     prices: {
       title: "Prețuri",
@@ -1445,20 +1445,20 @@ export const strings = {
         "Prețurile de la cântar, pe intrări și pe ieșiri, fără TVA. Alegi cine le vede. Cine nu le vede nu le poate nici schimba.",
       label: "Cine vede prețurile",
       options: {
-        COMPANY: "Toată firma, inclusiv consultantul și suportul WasteHouse",
-        NO_CONSULTANT: "Doar utilizatorii firmei, fără consultant și fără suportul WasteHouse",
+        COMPANY: "Toată firma, inclusiv consultantul și suportul eco360",
+        NO_CONSULTANT: "Doar utilizatorii firmei, fără consultant și fără suportul eco360",
         ADMIN_ONLY: "Doar administratorul firmei",
       },
       // Aceleași trei variante, pe carduri: numele scurt sus, cine rămâne afară dedesubt.
       choice: {
-        COMPANY: { label: "Toată firma", description: "Inclusiv consultantul și suportul WasteHouse." },
+        COMPANY: { label: "Toată firma", description: "Inclusiv consultantul și suportul eco360." },
         NO_CONSULTANT: {
           label: "Doar oamenii firmei",
-          description: "Fără consultant și fără suportul WasteHouse.",
+          description: "Fără consultant și fără suportul eco360.",
         },
         ADMIN_ONLY: {
           label: "Doar administratorul",
-          description: "Nici operatorul, nici consultantul, nici suportul WasteHouse.",
+          description: "Nici operatorul, nici consultantul, nici suportul eco360.",
         },
       },
       youSee: "Tu vezi prețurile.",
@@ -3874,7 +3874,7 @@ export const strings = {
     // Public page
     title: "Cerere de cont",
     subtitle:
-      "Conturile se creează de echipa WasteHouse, pe baza acestui formular. Completează-l o dată — din răspunsuri configurăm aplicația pentru tipul tău de activitate, ca să vezi doar ce îți trebuie.",
+      "Conturile se creează de echipa eco360, pe baza acestui formular. Completează-l o dată — din răspunsuri configurăm aplicația pentru tipul tău de activitate, ca să vezi doar ce îți trebuie.",
     // Cele trei rânduri din capul paginii. Un prospect care intră pe link nu știe nici unde a
     // ajuns, nici cât durează, nici ce primește — iar formularul are șase secțiuni, deci
     // întrebarea „merită să încep?" se pune înainte de prima rubrică, nu după.
@@ -3886,7 +3886,7 @@ export const strings = {
     // cei trei pași ai lui, 01–03, cu pasul curent aprins și ce s-a completat scris sub cei trecuți.
     posterHeadline: "Cere un cont.",
     posterAccent: "Restul îl facem noi.",
-    posterLede: "Conturile le creează echipa WasteHouse, din acest formular.",
+    posterLede: "Conturile le creează echipa eco360, din acest formular.",
     step1Name: "Compania",
     step1Lead: "Nume, CUI, sediu, ce face cu deșeurile.",
     step2Name: "Punctul de lucru",
@@ -4023,7 +4023,7 @@ export const strings = {
     submitting: "Se trimite...",
     successTitle: "Cererea a fost trimisă",
     successBody:
-      "Echipa WasteHouse o verifică și îți creează contul. Primești datele de acces pe emailul completat.",
+      "Echipa eco360 o verifică și îți creează contul. Primești datele de acces pe emailul completat.",
     // „Am primit cererea" răspunde la ce s-a întâmplat, nu la ce urmează — iar omul tocmai a dat
     // datele firmei lui unui site pe care nu-l cunoaște. Termenul e cel pe care îl ținem, nu unul
     // rotund: mai bine două zile promise și una ținută.

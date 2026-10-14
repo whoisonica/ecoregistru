@@ -80,8 +80,8 @@ export function Panel({
       {/* Logo + tasta de strângere. Pe telefon (sertar) e „×". */}
       <div className={cn("flex items-center gap-2 text-white", collapsed ? "justify-center" : "px-1")}>
         {!collapsed && (
-          <Link to="/" className="min-w-0 truncate text-base font-semibold text-white">
-            <BrandName />
+          <Link to="/" className="shrink-0">
+            <BrandName onDark />
           </Link>
         )}
         {!collapsed && <span className="ml-auto">{searchButton}</span>}

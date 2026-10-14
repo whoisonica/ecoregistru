@@ -16,7 +16,7 @@ const t = strings.settings.prices;
  * Serverul refuză la fel.
  *
  * <p>Trei variante, deci trei carduri, nu o listă derulantă (stilul „Prietenos”): textele lor sunt
- * lungi fiindcă numesc și suportul WasteHouse, iar într-un select se tăiau pe telefon.
+ * lungi fiindcă numesc și suportul eco360, iar într-un select se tăiau pe telefon.
  *
  * <p>Ceilalți văd setarea în citire și dacă ei înșiși văd prețurile: `pricesVisible` vine de pe
  * server, ca regula să nu fie scrisă a doua oară aici.

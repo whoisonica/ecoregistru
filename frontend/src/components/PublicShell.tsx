@@ -54,7 +54,7 @@ export function PublicShell({
       <section className="flex flex-col border-b border-line bg-surface-muted px-6 py-6 lg:border-b-0 lg:border-r lg:px-14 lg:py-10">
         {/* `header`: proba 6 citește de aici al cui e formularul. */}
         <header>
-          <BrandName className="text-lg [&_svg]:h-7 [&_svg]:w-7" />
+          <BrandName className="h-12 w-12 lg:h-14 lg:w-14" />
         </header>
         <div
           className={cn(

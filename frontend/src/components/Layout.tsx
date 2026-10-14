@@ -204,7 +204,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="min-w-0 truncate text-sm font-semibold">
-              {company?.name ?? user?.tenantName ?? <BrandName />}
+              {company?.name ?? user?.tenantName ?? <BrandName onDark className="h-8 w-8" />}
             </span>
             {company && (
               <span className="ml-auto shrink-0 font-mono text-[0.6875rem] uppercase text-lcd-digit">

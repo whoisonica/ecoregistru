@@ -26,8 +26,9 @@ const check = (n, ok, d = "") => {
 await page.goto(BASE + "/cerere-cont", { waitUntil: "networkidle" });
 await page.waitForTimeout(400);
 
-const brand = await page.textContent("header");
-check("pagina spune al cui e", /WasteHouse/.test(brand ?? ""), (brand ?? "").trim().slice(0, 40));
+// Din 14.10.2026 capul paginii e logoul eco360, fără text lângă el: numele e în `aria-label`.
+const brand = await page.getAttribute('header [role="img"]', "aria-label");
+check("pagina spune al cui e", brand === "eco360", brand ?? "fără logo");
 
 const steps = await page.$$eval("ol li", (li) => li.length);
 check("verdele arată cei patru pași ai formularului", steps >= 4, steps + " pași");
