@@ -81,7 +81,7 @@ export function Panel({
       <div className={cn("flex items-center gap-2 text-panel-strong", collapsed ? "justify-center" : "px-1")}>
         {!collapsed && (
           <Link to="/" className="shrink-0">
-            <BrandName onPanel />
+            <BrandName onPanel className="h-14 w-14" />
           </Link>
         )}
         {!collapsed && <span className="ml-auto">{searchButton}</span>}

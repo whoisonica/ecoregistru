@@ -45,7 +45,8 @@ check("au plecat afișajul lunii, tastele mari și rândul „Caută oriunde”"
 check("căutarea e o iconiță cu nume", /Caută oriunde/.test(panel.search), panel.search);
 check("din panou nu se adaugă nimic: niciun „+”, nicio tastă de adăugare", panel.adds.length === 0, panel.adds.join(" | "));
 check("rândurile n-au iconiță cât panoul e lat", panel.icons === 0, String(panel.icons));
-check("meniul începe sus, sub firmă", panel.navTop < 140, panel.navTop + "px");
+// 160, nu 140: logoul din panou a crescut la 56px (15.10.2026, cerut de proprietar), deci meniul coboară cu 16px.
+check("meniul începe sus, sub firmă", panel.navTop < 160, panel.navTop + "px");
 // Cifrele merg în ordine, câte intrări are firma — 1…9, apoi 0 pentru a zecea. Firma asta are
 // nouă de pe 18.09.2026, de când „Ambalaje" e tab în „Generare" și a ieșit din meniu, și zece de pe
 // 05.10.2026, de când „Energie" are intrare proprie; cifrele nu se cer pe de rost aici.
