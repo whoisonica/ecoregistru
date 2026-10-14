@@ -397,7 +397,7 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
         <label className="flex items-start gap-2 text-sm text-content-strong">
           <input
             type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+            className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-focus"
             checked={values.founder}
             onChange={(e) => setters.setFounder(e.target.checked)}
           />
@@ -418,7 +418,7 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
         <label className="flex items-start gap-2 text-sm text-content-strong">
           <input
             type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+            className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-focus"
             checked={values.twelveMonthCommitment}
             onChange={(e) => setters.setCommitment(e.target.checked)}
           />

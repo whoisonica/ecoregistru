@@ -29,7 +29,7 @@ export function Switch({
       htmlFor={id}
       className={cn(
         "flex items-start gap-3 rounded-lg border p-3.5 transition-colors",
-        "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40",
+        "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus/40",
         checked ? "border-brand bg-brand-50" : "border-line-strong bg-surface hover:border-content-subtle",
         disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer",
         className

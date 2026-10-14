@@ -771,7 +771,7 @@ function MethodOption({
       <input
         type="radio"
         name="payment-method"
-        className="mt-0.5 h-4 w-4 border-line-strong text-brand focus:ring-brand"
+        className="mt-0.5 h-4 w-4 border-line-strong text-brand focus:ring-focus"
         checked={checked}
         disabled={disabled}
         onChange={onChange}

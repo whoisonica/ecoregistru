@@ -2,7 +2,7 @@
 // (docs/stil-interfata.md, „Paginile de dinaintea contului”, 17.09.2026).
 //
 // (1) Amândouă stau în `PublicShell`: semnul în `header`, titlul mare cu fraza verde, linkul din colț spre
-// login, subsolul juridic o singură dată, butonul principal în verdele landingului (`bg-mark`). (2) Parola
+// login, subsolul juridic o singură dată, butonul principal în verdele aplicației (`bg-brand`; până la 15.10.2026 verdele landingului, `bg-mark`). (2) Parola
 // uitată spune același lucru pentru o adresă fără cont. (3) Fără cod, pagina de parolă spune ce lipsește în
 // loc să arate un formular; parolele diferite se opresc în ecran, iar un cod greșit primește eroarea
 // serverului. (4) La 375px nu se derulează lateral, iar „faptele” din stânga lipsesc.
@@ -35,7 +35,7 @@ await page.goto(BASE + "/parola-uitata", { waitUntil: "networkidle" });
 await shell(page, "parola uitată");
 check("parola uitată: „faptele” se văd pe desktop", (await page.getByText("Invitația expirată se reînnoiește tot de aici", { exact: true }).isVisible()));
 const submit = page.locator('button[type="submit"]');
-check("parola uitată: butonul e în verdele landingului", (await submit.getAttribute("class")).includes("bg-mark"));
+check("parola uitată: butonul e în verdele aplicației", (await submit.getAttribute("class")).includes("bg-brand"));
 await shot(page, "parola_uitata");
 await page.fill("#fp-email", "proba25-fara-cont@exemplu.ro");
 await submit.click();
@@ -53,8 +53,8 @@ check("fără cod: linkul spre un link nou", Boolean(await anon.$('a[href="/paro
 
 await anon.goto(BASE + "/reseteaza-parola?code=proba-25-inexistent", { waitUntil: "networkidle" });
 await shell(anon, "alege parola");
-check("alege parola: butonul e în verdele landingului",
-  (await anon.locator('button[type="submit"]').getAttribute("class")).includes("bg-mark"));
+check("alege parola: butonul e în verdele aplicației",
+  (await anon.locator('button[type="submit"]').getAttribute("class")).includes("bg-brand"));
 check("alege parola: bara de putere a rămas", Boolean(await anon.fill("#rp-pass", "Parola-lunga-2034").then(() => anon.$('[data-testid="password-strength"]'))));
 await anon.fill("#rp-confirm", "Alta-parola-2034");
 await anon.click('button[type="submit"]');

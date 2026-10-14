@@ -67,7 +67,7 @@ export function Panel({
       aria-label={`${t.searchEverywhere} (${t.searchKey})`}
       data-testid="panel-search"
       className={cn(
-        "grid place-items-center rounded-md border border-panel-line text-panel-mid transition-colors hover:border-panel-key hover:text-white focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0",
+        "grid place-items-center rounded-md border border-panel-line text-panel-mid transition-colors hover:border-panel-key hover:text-panel-strong focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0",
         collapsed ? "h-9 w-full" : "h-7 w-7"
       )}
     >
@@ -78,10 +78,10 @@ export function Panel({
   return (
     <div className={cn("flex h-full flex-col gap-2.5 bg-panel text-panel-text", collapsed ? "px-2 pb-2.5 pt-3" : "px-3 pb-3 pt-3.5")}>
       {/* Logo + tasta de strângere. Pe telefon (sertar) e „×". */}
-      <div className={cn("flex items-center gap-2 text-white", collapsed ? "justify-center" : "px-1")}>
+      <div className={cn("flex items-center gap-2 text-panel-strong", collapsed ? "justify-center" : "px-1")}>
         {!collapsed && (
           <Link to="/" className="shrink-0">
-            <BrandName onDark />
+            <BrandName onPanel />
           </Link>
         )}
         {!collapsed && <span className="ml-auto">{searchButton}</span>}
@@ -90,7 +90,7 @@ export function Panel({
           onClick={onToggleCollapsed}
           aria-label={collapsed ? t.expand : t.collapse}
           aria-pressed={collapsed}
-          className="hidden items-center gap-1 rounded text-panel-mid transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0 lg:inline-flex"
+          className="hidden items-center gap-1 rounded text-panel-mid transition-colors hover:text-panel-strong focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0 lg:inline-flex"
         >
           {collapsed ? <ChevronsRight className="h-4 w-4" aria-hidden /> : <ChevronsLeft className="h-4 w-4" aria-hidden />}
           {!collapsed && <kbd className="key key-dark">{t.collapseKey}</kbd>}
@@ -99,7 +99,7 @@ export function Panel({
           type="button"
           onClick={onCloseDrawer}
           aria-label={strings.common.closeNav}
-          className="rounded p-1 text-panel-mid hover:text-white lg:hidden"
+          className="rounded p-1 text-panel-mid hover:text-panel-strong lg:hidden"
         >
           <X className="h-5 w-5" aria-hidden />
         </button>
@@ -124,7 +124,7 @@ export function Panel({
         {nav.consultant.length > 0 && (
           <>
             {!collapsed && (
-              <div className="px-2 pb-0.5 pt-2.5 font-mono text-[0.625rem] uppercase tracking-[0.08em] text-panel-faint">
+              <div className="px-2 pb-0.5 pt-2.5 font-mono text-[0.625rem] uppercase tracking-[0.08em] text-panel-mid">
                 {strings.nav.groupConsultant}
               </div>
             )}
@@ -153,7 +153,7 @@ function IndicatorDot({ indicator }: { indicator: Indicator }) {
     <span
       className={cn(
         "ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap font-mono text-[0.6875rem]",
-        indicator.tone === "bad" ? "text-lcd-bad" : indicator.tone === "warn" ? "text-lcd-warn" : "text-panel-dim"
+        indicator.tone === "bad" ? "text-lcd-bad" : indicator.tone === "warn" ? "text-lcd-warn" : "text-panel-mid"
       )}
     >
       {indicator.tone !== "unknown" && <span aria-hidden className="h-1.5 w-1.5 rounded-[1px] bg-current" />}
@@ -200,7 +200,7 @@ function NavRow({
       <div
         className={cn(
           "relative flex items-center rounded-md transition-colors",
-          active ? "bg-panel-active shadow-[inset_3px_0_0_theme(colors.lcd.digit)]" : "hover:bg-panel-hover"
+          active ? "bg-panel-active shadow-[inset_3px_0_0_rgb(var(--panel-ind))]" : "hover:bg-panel-hover"
         )}
       >
         <NavLink
@@ -211,7 +211,7 @@ function NavRow({
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0",
             collapsed ? "justify-center px-0 py-2" : "px-2 py-1.5",
-            active ? "text-white" : "text-panel-text hover:text-white"
+            active ? "text-panel-strong" : "text-panel-text hover:text-panel-strong"
           )}
         >
           {!collapsed && item.hotkey && <kbd className="key key-dark hidden lg:inline-grid">{item.hotkey}</kbd>}
@@ -223,7 +223,7 @@ function NavRow({
               aria-hidden
               className={cn(
                 "absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-[1px]",
-                indicator.tone === "bad" ? "bg-lcd-bad" : indicator.tone === "warn" ? "bg-lcd-warn" : "bg-panel-dim"
+                indicator.tone === "bad" ? "bg-lcd-bad" : indicator.tone === "warn" ? "bg-lcd-warn" : "bg-panel-mid"
               )}
             />
           )}
@@ -242,7 +242,7 @@ function NavRow({
                   aria-current={on ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-2 rounded px-2 py-1 text-[0.84375rem] transition-colors focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0",
-                    on ? "bg-panel-hover text-white" : "text-panel-mid hover:bg-panel-hover hover:text-white"
+                    on ? "bg-panel-hover text-panel-strong" : "text-panel-mid hover:bg-panel-hover hover:text-panel-strong"
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">{tab.label}</span>
@@ -274,7 +274,7 @@ function BillingRow({ billing, collapsed }: { billing: BillingAccess | undefined
         cn(
           "flex items-center gap-2 rounded px-1.5 py-1 font-mono text-[0.6875rem] transition-colors hover:bg-panel-hover",
           collapsed && "justify-center px-0",
-          isActive ? "text-white" : "text-panel-mid"
+          isActive ? "text-panel-strong" : "text-panel-mid"
         )
       }
     >

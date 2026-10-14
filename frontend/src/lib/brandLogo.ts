@@ -4,7 +4,7 @@
  * zecimale. Literele sunt contururi, deci nu cer fontul Montserrat.
  *
  * <p>Îl desenează și webul (`components/BrandName.tsx`), și telefonul (`Logo` din `mobile/src/components/Icon.tsx`),
- * de aceea stă aici, fără niciun import. Culorile sunt ale logoului, nu ale temei: nu urmează `brand` din Tailwind.
+ * de aceea stă aici, fără niciun import. Culorile de mai jos sunt ale telefonului; webul le ia din tema aleasă (`--logo-*`).
  */
 export const LOGO_VIEWBOX = "-3.8 -3.8 207.5 207.5";
 

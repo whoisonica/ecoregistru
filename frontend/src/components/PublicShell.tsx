@@ -104,7 +104,7 @@ export function PublicShell({
 }
 
 /** Butonul principal al paginilor publice: verdele landingului, nu al aplicației. */
-export const publicButtonClass = "border-mark bg-mark hover:border-mark-hover hover:bg-mark-hover";
+export const publicButtonClass = "border-brand bg-brand hover:border-brand-hover hover:bg-brand-hover";
 
 /** Linkul din colț: „Ai deja cont? · Autentifică-te”. */
 export function CornerLink({ prompt, label, to }: { prompt: string; label: string; to: string }) {

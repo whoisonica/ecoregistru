@@ -60,8 +60,8 @@ export function ChoiceCards<T extends string>({
             className={cn(
               "relative flex gap-3 rounded-lg border bg-surface p-3.5 transition-colors",
               // Focusul stă pe radio-ul ascuns; cardul îl arată în locul lui.
-              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40",
-              checked ? "border-brand bg-brand-50 ring-1 ring-brand" : "border-line-strong hover:border-content-subtle",
+              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus/40",
+              checked ? "border-brand bg-brand-50 ring-1 ring-focus" : "border-line-strong hover:border-content-subtle",
               off ? "cursor-not-allowed opacity-55" : "cursor-pointer"
             )}
           >

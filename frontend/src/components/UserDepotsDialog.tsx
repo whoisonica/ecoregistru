@@ -96,7 +96,7 @@ export function UserDepotsDialog({
               <label key={wp.id} className="flex items-center gap-2 text-sm text-content-strong">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+                  className="h-4 w-4 rounded border-line-strong text-brand focus:ring-focus"
                   checked={chosen.includes(wp.id)}
                   onChange={(e) => toggle(wp.id, e.target.checked)}
                 />

@@ -36,10 +36,10 @@ export function MobileBar({
   const hasGenerated = screens.includes("GENERATED");
   const hasCollector = screens.includes("IN");
   const choices: { to: string; label: string; icon: typeof Plus; tone: string }[] = [];
-  if (hasGenerated) choices.push({ to: `${SCREEN_PATH.GENERATED}?nou=1`, label: hasCollector ? t.addOwnWaste : t.addWaste, icon: Plus, tone: "bg-brand text-white" });
+  if (hasGenerated) choices.push({ to: `${SCREEN_PATH.GENERATED}?nou=1`, label: hasCollector ? t.addOwnWaste : t.addWaste, icon: Plus, tone: "bg-brand text-brand-fg" });
   if (hasCollector) {
-    choices.push({ to: `${SCREEN_PATH.IN}?nou=1`, label: t.addInbound, icon: ArrowDownToLine, tone: "bg-inbound text-white" });
-    choices.push({ to: `${SCREEN_PATH.OUT}?nou=1`, label: t.addOutbound, icon: ArrowUpFromLine, tone: "bg-panel-active text-white ring-1 ring-inset ring-lcd-unit" });
+    choices.push({ to: `${SCREEN_PATH.IN}?nou=1`, label: t.addInbound, icon: ArrowDownToLine, tone: "bg-inbound text-inbound-fg" });
+    choices.push({ to: `${SCREEN_PATH.OUT}?nou=1`, label: t.addOutbound, icon: ArrowUpFromLine, tone: "bg-panel-active text-panel-strong ring-1 ring-inset ring-lcd-unit" });
   }
 
   function add() {
@@ -70,7 +70,7 @@ export function MobileBar({
         )}
         {canWrite && choices.length > 0 ? (
           <button type="button" onClick={add} aria-label={t.barAdd} className={tab}>
-            <span className="-mt-5 grid h-11 w-11 place-items-center rounded-md bg-brand text-white shadow-[0_3px_0_theme(colors.brand.800)]">
+            <span className="-mt-5 grid h-11 w-11 place-items-center rounded-md bg-brand text-brand-fg shadow-[0_3px_0_rgb(var(--brand-edge))]">
               <Plus className="h-6 w-6" aria-hidden />
             </span>
             {t.barAdd}

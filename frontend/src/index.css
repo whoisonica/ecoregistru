@@ -26,20 +26,97 @@
 :root {
   color-scheme: light;
 
-  /* Tokens semantice, în canale RGB ca modificatorii de opacitate ai Tailwind (`bg-surface/50`)
-     să funcționeze. „Cântar”: pagina e albă, ca bonul; liniile sunt gri-verzui discrete; textul e
-     grafit, nu negru. Schimbarea de stil a fost una singură, aici, cum promitea comentariul de
-     dinainte. Panoul (bara din stânga) și afișajul lui au tokenii lor, în `tailwind.config.js`. */
+  /* Temele de culori (15.10.2026, `docs/stil-interfata.md`): toate culorile aplicației stau aici, ca variabile,
+     în canale RGB, ca modificatorii de opacitate ai Tailwind (`bg-surface/50`) să funcționeze. `tailwind.config.js`
+     le dă nume (`bg-brand`, `bg-panel`, `text-state-ok-text`…), deci ecranele nu știu ce temă e aleasă.
+     `:root` = Luminos, tema implicită: pagina albă, panoul verde-deschis, butonul `#0B8C4A` al logoului. */
+  /* Pagina */
   --surface: 255 255 255; /* #FFFFFF — pagina, tabelele, dialogurile */
-  --surface-muted: 244 246 244; /* #F4F6F4 — rândul evidențiat, zone reci */
-  --surface-sunken: 232 236 233; /* #E8ECE9 — câmpuri dezactivate, zone „adâncite" */
+  --surface-muted: 244 246 244; /* #F4F6F4 — rândul evidențiat, bonul, zone reci */
+  --surface-sunken: 232 236 233; /* #E8ECE9 — câmpuri dezactivate, zone „adâncite” */
   --border-subtle: 227 230 227; /* #E3E6E3 — linia dintre rânduri */
   --border-strong: 201 208 204; /* #C9D0CC — chenarul câmpurilor și al butoanelor */
   --content: 22 26 24; /* #161A18 — textul principal */
-  /* Eticheta unui câmp, titlul unei secțiuni: text care nu e titlu, dar nici estompat. */
-  --content-strong: 43 50 46; /* #2B322E */
+  --content-strong: 43 50 46; /* #2B322E — eticheta unui câmp, titlul unei secțiuni */
   --content-muted: 92 102 96; /* #5C6660 — explicații, subtitluri */
-  --content-subtle: 126 136 128; /* #7E8880 — 4,4:1 pe alb, tot se citește */
+  --content-subtle: 107 117 110; /* #6B756E — cel mai estompat; 4,8:1 pe alb (#7E8880 de până pe 15.10.2026 avea 3,7:1) */
+  --content-title: 20 83 45; /* #14532D — titlul paginii (h1); 9,1:1 */
+  /* Verdele: butonul principal, linkurile, focusul */
+  --brand: 11 140 74; /* #0B8C4A — butonul principal; alb pe el 4,3:1, acceptat de proprietar */
+  --brand-hover: 10 125 66; /* #0A7D42 */
+  --brand-edge: 20 83 45; /* #14532D — apăsat și „grosimea” de 3px */
+  --brand-fg: 255 255 255; /* #FFFFFF — textul de pe buton */
+  --link: 20 83 45; /* #14532D — `text-brand`: linkurile, bifele, săgețile de pe pagină; 9,1:1 */
+  --brand-muted: 241 248 234; /* #F1F8EA — rândul selectat, sfaturi */
+  --brand-line: 207 230 180; /* #CFE6B4 — chenarul lor */
+  --focus: 11 140 74; /* #0B8C4A — inelul de focus; 4,3:1 pe alb */
+  --mark-text: 11 140 74; /* #0B8C4A — login și cererea de cont: eticheta, accentul mare */
+  --mark-line: 11 140 74; /* #0B8C4A — login: linia de lângă etichetă, punctele */
+  /* Scara verdelui, din cele patru culori ale logoului; 700 e culoarea linkurilor */
+  --brand-50: 241 248 234; /* #F1F8EA */
+  --brand-100: 225 240 211; /* #E1F0D3 */
+  --brand-200: 194 226 172; /* #C2E2AC */
+  --brand-300: 140 198 63; /* #8CC63F */
+  --brand-400: 63 175 70; /* #3FAF46 */
+  --brand-500: 11 140 74; /* #0B8C4A */
+  --brand-600: 10 125 66; /* #0A7D42 */
+  --brand-700: 20 83 45; /* #14532D */
+  --brand-800: 15 66 36; /* #0F4224 */
+  --brand-900: 11 48 25; /* #0B3019 */
+  --brand-950: 10 31 18; /* #0A1F12 */
+  /* Stările, ca LED-uri: pătrățel + cuvânt. Pătrățelul „gata” are 2,8:1 pe alb; sensul îl poartă cuvântul */
+  --state-ok: 63 175 70; /* #3FAF46 */
+  --state-ok-text: 20 83 45; /* #14532D */
+  --state-warn: 245 158 11; /* #F59E0B */
+  --state-warn-text: 138 75 0; /* #8A4B00 */
+  --state-bad: 217 45 32; /* #D92D20 */
+  --state-bad-text: 180 35 24; /* #B42318 */
+  --state-off: 184 191 187; /* #B8BFBB */
+  /* Intrarea în depozit */
+  --inbound: 28 111 209; /* #1C6FD1 */
+  --inbound-key: 21 91 173; /* #155BAD — sub mouse */
+  --inbound-border: 15 69 134; /* #0F4586 */
+  --inbound-fg: 255 255 255; /* #FFFFFF */
+  --inbound-text: 28 111 209; /* #1C6FD1 — text albastru pe pagină; 4,95:1 */
+  /* Pubelele */
+  --bin-paper: 31 95 191; /* #1F5FBF */
+  --bin-plastic: 233 182 0; /* #E9B600 */
+  --bin-glass: 46 139 62; /* #2E8B3E */
+  --bin-bio: 122 78 45; /* #7A4E2D */
+  --bin-residual: 77 77 77; /* #4D4D4D */
+  --bin-hazard: 200 16 46; /* #C8102E */
+  --bin-metal: 138 146 153; /* #8A9299 */
+  /* Graficul anului de pe Acasă */
+  --chart-bar: 140 198 63; /* #8CC63F — lunile trecute */
+  --chart-now: 11 140 74; /* #0B8C4A — luna curentă */
+  /* Panoul (bara din stânga, banda de sus pe telefon) */
+  --panel: 244 249 239; /* #F4F9EF */
+  --panel-edge: 220 234 207; /* #DCEACF — linia din dreapta */
+  --panel-line: 220 234 207; /* #DCEACF — liniile dinăuntru */
+  --panel-hover: 234 243 225; /* #EAF3E1 */
+  --panel-active: 255 255 255; /* #FFFFFF — rândul activ */
+  --panel-ind: 63 175 70; /* #3FAF46 — linia de 3px a rândului activ */
+  --panel-key: 201 220 187; /* #C9DCBB — chenarul tastei */
+  --panel-key-bg: 255 255 255; /* #FFFFFF */
+  --panel-text: 47 74 55; /* #2F4A37 — 9,1:1 */
+  --panel-strong: 20 83 45; /* #14532D */
+  --panel-mid: 78 107 87; /* #4E6B57 — CUI, rolul, titlurile de grup; 5,5:1 */
+  /* Plăcuța firmei din panou și mesajele din colț */
+  --lcd: 255 255 255; /* #FFFFFF */
+  --lcd-digit: 10 125 66; /* #0A7D42 */
+  --lcd-unit: 63 175 70; /* #3FAF46 */
+  --lcd-warn: 138 75 0; /* #8A4B00 */
+  --lcd-bad: 180 35 24; /* #B42318 */
+  /* Logoul (`BrandName`): pe pagină și pe panou */
+  --logo-a1: 11 140 74; /* #0B8C4A */
+  --logo-a2: 63 175 70; /* #3FAF46 */
+  --logo-a3: 140 198 63; /* #8CC63F */
+  --logo-letters: 20 83 45; /* #14532D */
+  --panel-logo-a1: 11 140 74; /* #0B8C4A */
+  --panel-logo-letters: 20 83 45; /* #14532D */
+  /* Fără canale RGB: au transparența lor */
+  --scrim: rgb(22 26 24 / 0.45); /* fundalul de sub dialog și sub sertarul de pe telefon */
+  --shadow-popover: 0 18px 40px -12px rgb(0 0 0 / 0.35);
 }
 
 html,
@@ -60,7 +137,7 @@ body {
    navighează cu tastatura fără să se vadă unde ești. */
 @layer base {
   :focus-visible {
-    @apply outline-none ring-2 ring-brand ring-offset-1 ring-offset-surface;
+    @apply outline-none ring-2 ring-focus ring-offset-1 ring-offset-surface;
   }
 
   input[type="checkbox"],
@@ -76,14 +153,14 @@ body {
     @apply font-mono text-[0.6875rem] font-medium uppercase tracking-[0.07em] text-content-muted;
   }
 
-  /* Tasta de pe panou: chenar de 1px, „grosime" de 3px jos, mono. Pe panoul grafit și pe pagină
-     arată la fel, doar culorile diferă (`.key-dark` / `.key-light`). */
+  /* Tasta: chenar de 1px, „grosime" de 3px jos, mono. Pe panou și pe pagină arată la fel, doar culorile
+     diferă (`.key-dark` pe panou, `.key-light` pe pagină; „dark” a rămas din vremea panoului grafit). */
   .key {
     @apply inline-grid h-5 min-w-5 shrink-0 place-items-center rounded px-1 font-mono text-[0.65625rem] leading-none;
     border-width: 1px 1px 3px;
   }
   .key-dark {
-    @apply border-panel-key bg-panel-hover text-panel-text;
+    @apply border-panel-key bg-panel-key-bg text-panel-text;
   }
   .key-light {
     @apply border-line-strong bg-surface text-content;

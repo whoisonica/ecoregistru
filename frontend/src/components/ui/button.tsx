@@ -20,11 +20,11 @@ import { cn } from "@/lib/utils";
 const buttonVariants = cva(
   // Direcția „Cântar”: colț de 5px, chenar de 1px, text de 600. Fără pastilă, fără umbră — butonul
   // principal e verdele Punctului Verde, plin; celelalte sunt albe cu chenar.
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "border-brand bg-brand text-brand-fg hover:border-brand-700 hover:bg-brand-700",
+        default: "border-brand bg-brand text-brand-fg hover:border-brand-hover hover:bg-brand-hover",
         outline: "border-line-strong bg-surface text-content hover:bg-surface-muted",
         ghost: "border-transparent hover:bg-surface-sunken",
         // Un buton care **face** ceva, lângă butoane care dau un fișier: are cutia lui, deci nu
@@ -34,7 +34,7 @@ const buttonVariants = cva(
         // document.
         muted: "border-line bg-surface-muted text-content hover:bg-surface-sunken",
         // Intrarea în depozit: albastru, cealaltă direcție față de verde.
-        inbound: "border-inbound bg-inbound text-white hover:border-inbound-key hover:bg-inbound-key",
+        inbound: "border-inbound bg-inbound text-inbound-fg hover:border-inbound-key hover:bg-inbound-key",
         // Pentru fapta care nu se ia înapoi. Până acum se scria pe loc, ca
         // `className="text-red-600 hover:bg-red-50"` pe un buton ghost — de patru ori, cu patru
         // nuanțe ușor diferite.

@@ -421,7 +421,7 @@ export function CompanyForm({ company }: { company: Company }) {
                 <label key={contribution} className="flex items-start gap-2 text-sm">
                   <input
                     type="checkbox"
-                    className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+                    className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-focus"
                     checked={afmContributions.includes(contribution)}
                     onChange={() =>
                       setAfmContributions((prev) =>
@@ -446,7 +446,7 @@ export function CompanyForm({ company }: { company: Company }) {
               <label className="mt-3 flex items-center gap-2 border-t border-line pt-2 text-sm text-content-strong">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+                  className="h-4 w-4 rounded border-line-strong text-brand focus:ring-focus"
                   checked={afmObligation}
                   onChange={(e) => setAfmObligation(e.target.checked)}
                 />

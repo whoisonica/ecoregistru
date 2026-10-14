@@ -393,7 +393,7 @@ export function AnnualTotals({
                   <TD>
                     {/* Roșu = nu se poate depune așa; galben = o așteptare legitimă (cântarul). */}
                     {c.unclassified > 0 ? (
-                      <Link to={missingCodeHref} className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                      <Link to={missingCodeHref} className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                         <Badge variant="danger" className="underline decoration-dotted underline-offset-2">
                           {t.stateMissingCode.replace("{kg}", kg(c.unclassified))}
                         </Badge>

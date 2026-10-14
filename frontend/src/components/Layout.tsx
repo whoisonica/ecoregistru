@@ -189,8 +189,8 @@ export function Layout({ children }: { children: ReactNode }) {
         {strings.common.skipToContent}
       </a>
 
-      {/* Banda de sus, doar pe ecran îngust: grafit, ca panoul — firma, cifra lunii, cel mai urgent lucru. */}
-      <header className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 bg-panel px-3 py-2 text-white lg:hidden">
+      {/* Banda de sus, doar pe ecran îngust: în culorile panoului — firma, cifra lunii, cel mai urgent lucru. */}
+      <header className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-panel-edge bg-panel px-3 py-2 text-panel-strong lg:hidden">
         <button
           type="button"
           onClick={() => setNavOpen(true)}
@@ -204,7 +204,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="min-w-0 truncate text-sm font-semibold">
-              {company?.name ?? user?.tenantName ?? <BrandName onDark className="h-8 w-8" />}
+              {company?.name ?? user?.tenantName ?? <BrandName onPanel className="h-8 w-8" />}
             </span>
             {company && (
               <span className="ml-auto shrink-0 font-mono text-[0.6875rem] uppercase text-lcd-digit">
@@ -216,7 +216,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <div
               className={cn(
                 "truncate font-mono text-[0.6875rem]",
-                dashboard.nextAction.tone === "danger" ? "text-lcd-bad" : dashboard.nextAction.tone === "warning" ? "text-lcd-warn" : "text-panel-dim"
+                dashboard.nextAction.tone === "danger" ? "text-lcd-bad" : dashboard.nextAction.tone === "warning" ? "text-lcd-warn" : "text-panel-mid"
               )}
             >
               ▲ {dashboard.nextAction.title}
@@ -228,7 +228,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Fundalul sertarului. Nu există pe `lg`, unde panoul e parte din pagină. */}
       {navOpen && (
         <div
-          className="fixed inset-0 z-40 animate-fade-in bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 animate-fade-in bg-scrim lg:hidden"
           onClick={() => setNavOpen(false)}
           aria-hidden
         />
@@ -237,9 +237,10 @@ export function Layout({ children }: { children: ReactNode }) {
       <aside
         id="navigatie-principala"
         className={cn(
-          // Pe ecran îngust: sertar peste pagină, care intră din stânga. Pe `lg`: coloana grafit,
-          // în fluxul paginii, de 262px sau de 64px când e strânsă.
-          "fixed inset-y-0 left-0 z-50 w-[272px] shrink-0 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0",
+          // Pe ecran îngust: sertar peste pagină, care intră din stânga. Pe `lg`: coloana panoului,
+          // în fluxul paginii, de 262px sau de 64px când e strânsă. Linia din dreapta o desparte de pagină
+          // pe temele cu panou deschis (Luminos); pe celelalte e de culoarea panoului.
+          "fixed inset-y-0 left-0 z-50 w-[272px] shrink-0 border-r border-panel-edge transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0",
           collapsed ? "lg:w-16" : "lg:w-[262px]",
           navOpen ? "translate-x-0" : "-translate-x-full"
         )}

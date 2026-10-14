@@ -445,7 +445,7 @@ export function AccountRequestPage() {
           </div>
 
           {draft.restored && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-inbound px-3 py-2 text-sm text-inbound-border">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-inbound px-3 py-2 text-sm text-inbound-text">
               <span>{t.draftRestored}</span>
               <button
                 type="button"

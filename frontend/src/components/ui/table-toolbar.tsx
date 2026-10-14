@@ -52,7 +52,7 @@ export function TableSearch({
           }}
           placeholder={placeholder ?? strings.common.searchPlaceholder}
           aria-label={strings.common.search}
-          className="h-10 w-full rounded-md border border-line-strong bg-surface pl-9 pr-9 text-sm placeholder:text-content-subtle transition-colors hover:border-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/25 [&::-webkit-search-cancel-button]:hidden"
+          className="h-10 w-full rounded-md border border-line-strong bg-surface pl-9 pr-9 text-sm placeholder:text-content-subtle transition-colors hover:border-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/25 [&::-webkit-search-cancel-button]:hidden"
         />
         {value && (
           <button

@@ -34,7 +34,7 @@ export function PageHeader({
           butoane, cele două documente oficiale de pe Evidențe (numele lor lungi, cerute de specialistă
           pe 15.09.2026) strângeau titlul pe trei rânduri, într-o coloană de 173px. */}
       <div className="min-w-0 sm:min-w-[22rem] sm:flex-1">
-        <h1 className="text-[1.625rem] font-semibold leading-tight tracking-[-0.01em] text-content">
+        <h1 className="text-[1.625rem] font-semibold leading-tight tracking-[-0.01em] text-content-title">
           {title}
         </h1>
         {description && (

@@ -197,7 +197,7 @@ export function Combobox({
           }
         }}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-left text-sm transition-colors hover:border-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/25 disabled:opacity-50",
+          "flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-left text-sm transition-colors hover:border-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/25 disabled:opacity-50",
           invalid ? "border-state-bad" : "border-line-strong",
           // Loc pentru butonul de ștergere, care stă deasupra și nu mai e copilul acestuia.
           value ? "pr-16" : "pr-9",
@@ -219,7 +219,7 @@ export function Combobox({
               triggerRef.current?.focus();
             }}
             aria-label={t.comboboxClear}
-            className="pointer-events-auto rounded text-content-subtle transition-colors hover:text-content-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="pointer-events-auto rounded text-content-subtle transition-colors hover:text-content-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
             <X className="h-4 w-4" />
           </button>
@@ -239,7 +239,7 @@ export function Combobox({
               aria-label={searchPlaceholder}
               aria-controls={listId}
               aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
-              className="w-full rounded border border-line px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand"
+              className="w-full rounded border border-line px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus"
             />
           </div>
           <div

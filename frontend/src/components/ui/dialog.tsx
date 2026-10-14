@@ -179,7 +179,7 @@ export function Dialog({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div
-        className="absolute inset-0 animate-fade-in bg-black/40"
+        className="absolute inset-0 animate-fade-in bg-scrim"
         onClick={busy ? undefined : onClose}
         aria-hidden
       />

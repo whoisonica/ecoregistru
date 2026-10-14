@@ -106,7 +106,7 @@ export function CompanyLabel({
   if (collapsed) {
     return (
       <div
-        className="grid h-9 w-full place-items-center rounded-md border border-panel-line bg-panel-hover font-mono text-sm font-medium text-white"
+        className="grid h-9 w-full place-items-center rounded-md border border-panel-line bg-panel-hover font-mono text-sm font-medium text-panel-strong"
         aria-label={name}
       >
         {name.charAt(0).toUpperCase()}
@@ -117,7 +117,7 @@ export function CompanyLabel({
   const body = (
     <>
       <div className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-white">{name}</span>
+        <span className="block truncate text-sm font-semibold text-panel-strong">{name}</span>
         <span className="block truncate font-mono text-[0.6875rem] text-panel-mid">{meta}</span>
       </div>
       {multiCompany && <ChevronDown className="h-4 w-4 shrink-0 text-panel-mid" aria-hidden />}
@@ -160,7 +160,7 @@ export function CompanyLabel({
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t.companySearch}
               aria-label={t.companySearch}
-              className="h-9 w-full rounded-md border border-line-strong bg-surface pl-8 pr-2 text-sm placeholder:text-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/25"
+              className="h-9 w-full rounded-md border border-line-strong bg-surface pl-8 pr-2 text-sm placeholder:text-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/25"
             />
           </div>
           <div role="listbox" className="mt-1 max-h-80 overflow-y-auto">

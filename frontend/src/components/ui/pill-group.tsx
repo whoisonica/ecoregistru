@@ -52,7 +52,7 @@ export function PillGroup<T extends string>({
               // „Cântar”: o tastă, nu o pastilă. Cea apăsată e grafit cu text alb, ca segmentul ales
               // dintr-un comutator.
               "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40",
+              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus/40",
               checked
                 ? "border-content bg-content text-surface"
                 : "border-line-strong bg-surface text-content hover:border-content-subtle",

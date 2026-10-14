@@ -1030,7 +1030,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                           type="button"
                           onClick={() => setAttachmentsOf(m.id)}
                           aria-label={t.attachmentsView}
-                          className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-content-muted underline-offset-2 hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                          className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-content-muted underline-offset-2 hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                         >
                           <Paperclip className="h-3.5 w-3.5" />
                           {m.attachments.length}

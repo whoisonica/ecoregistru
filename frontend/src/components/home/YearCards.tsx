@@ -69,7 +69,7 @@ export function YearMonthsCard({ d }: { d: DashboardData }) {
                     data-gap={gap || undefined}
                     className={cn(
                       "w-full",
-                      future ? "bg-line" : gap ? "bg-state-warn" : current ? "bg-brand-300" : "bg-brand"
+                      future ? "bg-line" : gap ? "bg-state-warn" : current ? "bg-chart-now" : "bg-chart"
                     )}
                     style={{ height: future ? 2 : gap ? 6 : `${Math.max((v / max) * 88, v > 0 ? 3 : 1)}%` }}
                   />

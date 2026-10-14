@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * loc, ca cele trei să nu se despartă.
  */
 export const fieldClasses =
-  "w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-content placeholder:text-content-subtle transition-colors hover:border-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/25 focus-visible:ring-offset-0 disabled:bg-surface-muted disabled:opacity-60";
+  "w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-content placeholder:text-content-subtle transition-colors hover:border-content-subtle focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/25 focus-visible:ring-offset-0 disabled:bg-surface-muted disabled:opacity-60";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (

@@ -66,17 +66,17 @@ export function AccountMenu({
           collapsed ? "justify-center px-0 py-1.5" : "px-1.5 py-1.5"
         )}
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-panel-key font-mono text-sm font-medium text-white">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-panel-key font-mono text-sm font-medium text-panel-strong">
           {initial}
         </span>
         {!collapsed && (
           <>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-medium text-white">{email}</span>
-              <span className="block truncate text-[0.6875rem] text-panel-dim">{roleLabel}</span>
+              <span className="block truncate text-xs font-medium text-panel-strong">{email}</span>
+              <span className="block truncate text-[0.6875rem] text-panel-mid">{roleLabel}</span>
             </span>
             <ChevronUp
-              className={cn("h-4 w-4 shrink-0 text-panel-dim transition-transform", !open && "rotate-180")}
+              className={cn("h-4 w-4 shrink-0 text-panel-mid transition-transform", !open && "rotate-180")}
               aria-hidden
             />
           </>

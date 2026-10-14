@@ -1,3 +1,6 @@
+/** O culoare a temei: variabila CSS din `src/index.css`, cu opacitatea lăsată la Tailwind (`bg-brand/40`). */
+const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
@@ -37,99 +40,108 @@ export default {
         bold: "600",
         extrabold: "700",
       },
+      // Toate culorile sunt variabile CSS (`src/index.css`), câte una pe temă: `:root` = Luminos. Numele claselor
+      // rămân aceleași pe toate temele (`bg-brand`, `bg-panel`, `text-state-ok-text`), deci ecranele nu se
+      // rescriu când omul alege altă temă din Setări. Nu se scriu culori de mână (`gray-*`, `bg-white`).
       colors: {
-        // Verdele de pe Punctul Verde al ambalajelor — acțiunea principală. `DEFAULT`, `fg` și
-        // `muted` există de la început și sunt folosite peste tot (`bg-brand`, `text-brand-fg`,
-        // `bg-brand-muted`) — nu se ating. Semnul mărcii are culorile lui, în `BrandName`.
+        // Verdele logoului eco360. Butonul principal e `bg-brand text-brand-fg`; `text-brand` e altă
+        // variabilă (mai jos, `textColor`), pentru că pe Întunecat butonul și săgeata de pe pagină diferă.
         brand: {
-          DEFAULT: "#009A44",
-          fg: "#ffffff",
-          muted: "#EEF6F1",
-          50: "#EEF6F1",
-          100: "#DDF5E6",
-          200: "#B5EBC9",
-          300: "#7CD9A1",
-          400: "#2DB466",
-          500: "#009A44",
-          600: "#008A3D",
-          700: "#007A36",
-          800: "#00622F",
-          900: "#004B24",
-          950: "#022C16",
+          DEFAULT: v("brand"),
+          hover: v("brand-hover"),
+          edge: v("brand-edge"),
+          fg: v("brand-fg"),
+          muted: v("brand-muted"),
+          line: v("brand-line"),
+          ...Object.fromEntries([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((n) => [n, v(`brand-${n}`)])),
         },
-        // Verdele semnului mărcii și al landingului (wastehouse.ro): `--green` de acolo, cu
-        // apăsatul și fondul lui deschis. Pe paginile de dinaintea contului (login, cerere), ca
-        // omul care vine de pe landing să nu simtă că a schimbat site-ul. În aplicație rămâne `brand`.
+        // Paginile de dinaintea contului (login, cererea de cont): până la 14.10.2026 verdele landingului
+        // (`#047857`); acum verdele aplicației. Rămâne doar linia și punctele; textul e în `textColor`.
         mark: {
-          DEFAULT: "#047857",
-          hover: "#065F46",
-          soft: "#DCFCE7",
+          DEFAULT: v("mark-line"),
+          soft: v("brand-muted"),
         },
-        // Tokens semantice, legate de variabilele din index.css. Rostul lor e ca „fundalul unei
-        // suprafețe" să fie o singură decizie, luată într-un loc — nu `bg-white` scris de 40 de
-        // ori, care nu se poate schimba fără să le atingi pe toate.
+        focus: v("focus"),
         surface: {
-          DEFAULT: "rgb(var(--surface) / <alpha-value>)",
-          muted: "rgb(var(--surface-muted) / <alpha-value>)",
-          sunken: "rgb(var(--surface-sunken) / <alpha-value>)",
+          DEFAULT: v("surface"),
+          muted: v("surface-muted"),
+          sunken: v("surface-sunken"),
         },
         line: {
-          DEFAULT: "rgb(var(--border-subtle) / <alpha-value>)",
-          strong: "rgb(var(--border-strong) / <alpha-value>)",
+          DEFAULT: v("border-subtle"),
+          strong: v("border-strong"),
         },
         content: {
-          DEFAULT: "rgb(var(--content) / <alpha-value>)",
-          strong: "rgb(var(--content-strong) / <alpha-value>)",
-          muted: "rgb(var(--content-muted) / <alpha-value>)",
-          subtle: "rgb(var(--content-subtle) / <alpha-value>)",
+          DEFAULT: v("content"),
+          strong: v("content-strong"),
+          muted: v("content-muted"),
+          subtle: v("content-subtle"),
+          title: v("content-title"),
         },
-        // Panoul: bara din stânga și rama de pe telefon. Grafit, ca carcasa cântarului.
+        // Panoul: bara din stânga și banda de sus de pe telefon. `strong` e textul rândului activ și numele
+        // firmei (pe panoul grafit de dinainte era `text-white`); `mid` e tot ce e estompat.
         panel: {
-          DEFAULT: "#1B201D",
-          hover: "#232925",
-          active: "#2A322E",
-          line: "#2F3632",
-          key: "#3B4440",
-          text: "#C9D1CC",
-          mid: "#8A968F",
-          dim: "#7E8A84",
-          faint: "#6B7670",
+          DEFAULT: v("panel"),
+          edge: v("panel-edge"),
+          line: v("panel-line"),
+          hover: v("panel-hover"),
+          active: v("panel-active"),
+          ind: v("panel-ind"),
+          key: v("panel-key"),
+          "key-bg": v("panel-key-bg"),
+          text: v("panel-text"),
+          strong: v("panel-strong"),
+          mid: v("panel-mid"),
         },
-        // Afișajul LCD din panou: cifra lunii și rândul de alertă.
+        // Plăcuța firmei din panou (fondul) și cifrele ei; tot ele colorează mesajele din colț.
         lcd: {
-          DEFAULT: "#0D1210",
-          digit: "#7CF2A9",
-          unit: "#4FB57C",
-          warn: "#FFB020",
-          bad: "#FF6B5E",
+          DEFAULT: v("lcd"),
+          digit: v("lcd-digit"),
+          unit: v("lcd-unit"),
+          warn: v("lcd-warn"),
+          bad: v("lcd-bad"),
         },
         // Intrarea în depozit e albastră — cealaltă direcție față de verdele „predat/ieșit".
         inbound: {
-          DEFAULT: "#1C6FD1",
-          key: "#155BAD",
-          border: "#0F4586",
+          DEFAULT: v("inbound"),
+          key: v("inbound-key"),
+          border: v("inbound-border"),
+          fg: v("inbound-fg"),
+          text: v("inbound-text"),
         },
         // Stările, ca LED-uri: pătrățel + cuvânt. Sensul nu se schimbă: roșu = nu se poate depune
         // așa; galben = o așteptare legitimă. Culoarea pubelei (mai jos) e altceva.
         state: {
-          ok: "#009A44",
-          "ok-text": "#007A36",
-          warn: "#F59E0B",
-          "warn-text": "#8A4B00",
-          bad: "#D92D20",
-          "bad-text": "#B42318",
-          off: "#B8BFBB",
+          ok: v("state-ok"),
+          "ok-text": v("state-ok-text"),
+          warn: v("state-warn"),
+          "warn-text": v("state-warn-text"),
+          bad: v("state-bad"),
+          "bad-text": v("state-bad-text"),
+          off: v("state-off"),
         },
         // Pubelele, pe codul de deșeu (`lib/binColor.ts`): o listă explicită, nu un prefix ghicit.
         bin: {
-          paper: "#1F5FBF",
-          plastic: "#E9B600",
-          glass: "#2E8B3E",
-          bio: "#7A4E2D",
-          residual: "#4D4D4D",
-          hazard: "#C8102E",
-          metal: "#8A9299",
+          paper: v("bin-paper"),
+          plastic: v("bin-plastic"),
+          glass: v("bin-glass"),
+          bio: v("bin-bio"),
+          residual: v("bin-residual"),
+          hazard: v("bin-hazard"),
+          metal: v("bin-metal"),
         },
+        // Graficul anului de pe Acasă.
+        chart: {
+          DEFAULT: v("chart-bar"),
+          now: v("chart-now"),
+        },
+        scrim: "var(--scrim)",
+      },
+      // `text-brand` (linkurile, bifele) și `text-mark` (login) au variabila lor: textul verde nu e verdele
+      // butonului (pe Luminos e mai închis, pe Întunecat mai deschis). Restul nuanțelor `text-brand-*` vin din `colors`.
+      textColor: {
+        brand: { DEFAULT: v("link") },
+        mark: { DEFAULT: v("mark-text") },
       },
       minWidth: {
         5: "1.25rem",
@@ -138,7 +150,7 @@ export default {
         // Nicio umbră pe pagină: cardurile stau pe chenar, nu pe umbră. Rămâne doar popover-ul.
         card: "none",
         "card-hover": "none",
-        popover: "0 18px 40px -12px rgb(0 0 0 / 0.35)",
+        popover: "var(--shadow-popover)",
       },
       keyframes: {
         "fade-in": {
