@@ -44,7 +44,7 @@ public class EmailService {
         Context ctx = new Context(Locale.of("ro"));
         ctx.setVariable("firstName", user.getFirstName() != null ? user.getFirstName() : "");
         ctx.setVariable("resetUrl", frontendBaseUrl + "/reseteaza-parola?code=" + code);
-        send(user.getEmail(), "Resetare parolă — WasteHouse", "mail/forgot_password", ctx);
+        send(user.getEmail(), "Resetare parolă — eco360", "mail/forgot_password", ctx);
     }
 
     /**
@@ -54,21 +54,24 @@ public class EmailService {
      */
     public void sendInviteEmail(AppUser user, String code, int validDays) {
         String organization = user.getConsultancy() != null ? user.getConsultancy().getName()
-                : user.getCompany() != null ? user.getCompany().getName() : "WasteHouse";
+                : user.getCompany() != null ? user.getCompany().getName() : "eco360";
         Context ctx = new Context(Locale.of("ro"));
         ctx.setVariable("firstName", user.getFirstName() != null ? user.getFirstName() : "");
         ctx.setVariable("organization", organization);
         ctx.setVariable("validDays", validDays);
         ctx.setVariable("resetUrl", frontendBaseUrl + "/reseteaza-parola?code=" + code);
-        send(user.getEmail(), "Invitație în WasteHouse — " + organization, "mail/invite", ctx);
+        send(user.getEmail(), "Invitație în eco360 — " + organization, "mail/invite", ctx);
     }
 
     public void send(String to, String subject, String templateName, Context context) {
+        // Logoul din capul fiecărui mail stă lângă aplicația web (`frontend/public/brand`), deci adresa vine din
+        // aceeași variabilă ca linkurile. `wastehouse-mark.png` (semnul vechi) rămâne acolo pentru mailurile deja trimise.
+        if (!context.containsVariable("logoUrl")) context.setVariable("logoUrl", frontendBaseUrl + "/brand/eco360-mail.png");
         try {
             String html = templateEngine.process(templateName, context);
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
-            helper.setFrom(from, "WasteHouse");
+            helper.setFrom(from, "eco360");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(html, true);

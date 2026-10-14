@@ -258,7 +258,7 @@ class BorderouNirIT {
                 .contains("PET").contains("150102").contains("kg").contains("40")
                 .contains("Valoareajustăsestabileştedecontabil(OMFP1802/2014pct.75alin.(1)lit.d)).")
                 .contains("Comisiaderecepţie").contains("Primitîngestiune")
-                .contains("GeneratcuWasteHouse");
+                .contains("Generatcueco360");
     }
 
     @Test

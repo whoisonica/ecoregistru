@@ -233,7 +233,7 @@ public class EmailNotificationService implements NotificationService {
         ctx.setVariable("pdfUrl", invoice.getFgoLink());
         ctx.setVariable("payUrl", invoice.getFgoLinkPlata());
         ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
-        emailService.send(recipientEmail, "Factura " + number + " — abonamentul WasteHouse",
+        emailService.send(recipientEmail, "Factura " + number + " — abonamentul eco360",
                 "mail/subscription_invoice", ctx);
     }
 
@@ -260,7 +260,7 @@ public class EmailNotificationService implements NotificationService {
         String subject = switch (kind) {
             case OVERDUE -> "Factura " + number + " a trecut de scadență";
             case READ_ONLY_WARNING -> "Factura " + number + ": în 7 zile contul trece în doar-citire";
-            case READ_ONLY -> "Contul WasteHouse e acum doar pentru citire — factura " + number;
+            case READ_ONLY -> "Contul eco360 e acum doar pentru citire — factura " + number;
             case CARD_FAILED -> "Plata cu cardul pentru factura " + number + " nu a trecut";
         };
         emailService.send(recipientEmail, subject, "mail/billing_reminder", ctx);
@@ -273,7 +273,7 @@ public class EmailNotificationService implements NotificationService {
         ctx.setVariable("newEmail", newEmail);
         ctx.setVariable("changedBy", changedBy);
         ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
-        emailService.send(oldEmail, "Facturile WasteHouse vin de acum pe altă adresă", "mail/billing_email_changed", ctx);
+        emailService.send(oldEmail, "Facturile eco360 vin de acum pe altă adresă", "mail/billing_email_changed", ctx);
     }
 
     @Override

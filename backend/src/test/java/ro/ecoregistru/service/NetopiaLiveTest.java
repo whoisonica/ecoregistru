@@ -30,7 +30,7 @@ class NetopiaLiveTest {
     @Test
     void theSandboxGivesThePaymentPageForOurRequest() {
         String orderId = "WHLIVE-" + UUID.randomUUID().toString().substring(0, 8);
-        NetopiaClient.Started started = netopia.start(orderId, new BigDecimal("389"), "Factura WH proba - abonament WasteHouse",
+        NetopiaClient.Started started = netopia.start(orderId, new BigDecimal("389"), "Factura WH proba - abonament eco360",
                 new NetopiaClient.Billing("contact@wastehouse.ro", "0740000000", "Proba", "Test WasteHouse SRL",
                         "Oradea", "Bihor", "Str. Test nr. 1"),
                 "https://app.wastehouse.ro/abonament?plata=proba", null);

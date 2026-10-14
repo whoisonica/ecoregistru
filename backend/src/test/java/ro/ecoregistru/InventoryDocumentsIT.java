@@ -190,7 +190,7 @@ class InventoryDocumentsIT {
         InventoryResponse inv = inventory(1, false);
         for (String doc : List.of("decizie", "declaratie", "lista", "pv")) {
             assertThat(flat(String.join("\n", pages(pdf(inv.id(), doc))))).as(doc)
-                    .contains(flat("Generat cu WasteHouse"), flat("versiunea"));
+                    .contains(flat("Generat cu eco360"), flat("versiunea"));
         }
     }
 
@@ -204,7 +204,7 @@ class InventoryDocumentsIT {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
         String text = flat(String.join("\n", pages(body)));
         assertThat(text).contains(flat("NOTĂ DE PRELUARE A SOLDURILOR"), flat("fişele de magazie"),
-                flat("Ion Gestionar"), flat("Ana Contabil"), flat("Generat cu WasteHouse"), flat("500"));
+                flat("Ion Gestionar"), flat("Ana Contabil"), flat("Generat cu eco360"), flat("500"));
     }
 
     // --- helpers ---

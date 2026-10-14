@@ -163,7 +163,7 @@ public class ImportTemplate {
 
     private static void instructions(Sheet sheet) {
         String[] lines = {
-                "Importul din Excel — WasteHouse",
+                "Importul din Excel — eco360",
                 "",
                 "1. Completează foile „Puncte de lucru”, „Parteneri” și „Mișcări”. Nu schimba antetul și nu muta coloanele: un fișier cu alt antet e refuzat.",
                 "2. Coloanele cu * sunt obligatorii. Un rând gol se sare.",

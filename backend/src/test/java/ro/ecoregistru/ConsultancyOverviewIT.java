@@ -289,7 +289,9 @@ class ConsultancyOverviewIT {
         ctx.setVariable("resetUrl", "https://app.wastehouse.ro/reseteaza-parola?code=x");
         String html = templateEngine.process("mail/invite", ctx);
         assertThat(html).contains(consultancy.getName()).contains("7 zile").contains("reseteaza-parola?code=x")
-                .doesNotContain("resetare").doesNotContain("ignoră");
+                .doesNotContain("resetare").doesNotContain("ignoră")
+                // Fără `logoUrl` (pus de `EmailService.send`), logoul vine de pe domeniul aplicației.
+                .contains("src=\"https://www.eco360.ro/brand/eco360-mail.png\"").contains("Ai un cont în eco360");
     }
 
     /** Un coleg cu parolă are „Parolă uitată"; o invitație nouă ar fi un link de resetare pentru contul altuia. */

@@ -46,7 +46,7 @@ public class ImportController {
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename("sablon-import-wastehouse.xlsx").build().toString())
+                        ContentDisposition.attachment().filename("sablon-import-eco360.xlsx").build().toString())
                 .body(template.render());
     }
 

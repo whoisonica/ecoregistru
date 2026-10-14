@@ -45,7 +45,7 @@ public final class DepotPdf {
     }
 
     /**
-     * Pune pe fiecare pagină rândul de semnături, „Pagina X din Y” și „Generat cu WasteHouse, versiunea …”. Fiecare
+     * Pune pe fiecare pagină rândul de semnături, „Pagina X din Y” și „Generat cu eco360, versiunea …”. Fiecare
      * element din {@code signatures} e o coloană: primul rând e rolul, fiecare rând de după e o persoană cu linia ei de
      * semnătură. Pagina rotită (lista, A4 landscape) se măsoară cu rotația ei: {@code PdfStamper} rotește conținutul
      * adăugat, deci coordonatele sunt ale paginii așa cum se vede.
@@ -87,7 +87,7 @@ public final class DepotPdf {
                         }
                     }
                     ColumnText.showTextAligned(over, Element.ALIGN_LEFT,
-                            new Phrase(cp1250("Generat cu WasteHouse (app.wastehouse.ro), versiunea " + version), small),
+                            new Phrase(cp1250("Generat cu eco360 (www.eco360.ro), versiunea " + version), small),
                             left, 12f, 0);
                     ColumnText.showTextAligned(over, Element.ALIGN_RIGHT,
                             new Phrase(cp1250("Pagina " + p + " din " + pages), small), left + width, 12f, 0);

@@ -6,8 +6,7 @@
 <body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
 <div style="max-width: 520px; margin: 0 auto; padding: 24px;">
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 20px 0;"><tr>
-        <td style="vertical-align: middle; padding-right: 10px;"><img src="https://app.wastehouse.ro/brand/wastehouse-mark.png" width="32" height="32" alt="" style="display: block; border: 0;"/></td>
-        <td style="vertical-align: middle; font-size: 20px; font-weight: bold; color: #111827; letter-spacing: -0.3px;">WasteHouse</td>
+        <td><img th:src="${logoUrl} ?: 'https://www.eco360.ro/brand/eco360-mail.png'" width="48" height="48" alt="eco360" style="display: block; border: 0;"/></td>
     </tr></table>
     <h2 th:if="${kind == 'OVERDUE'}" style="color: #b45309;">Factura <span th:text="${number}">WH 1</span> a trecut de scadență</h2>
     <h2 th:if="${kind == 'READ_ONLY_WARNING'}" style="color: #b45309;">În 7 zile contul trece în doar-citire</h2>
@@ -15,7 +14,7 @@
     <h2 th:if="${kind == 'CARD_FAILED'}" style="color: #b91c1c;">Plata cu cardul nu a trecut</h2>
     <p>Bună ziua,</p>
     <p th:if="${kind == 'OVERDUE'}">
-        Factura <strong th:text="${number}">WH 1</strong> pentru abonamentul WasteHouse al
+        Factura <strong th:text="${number}">WH 1</strong> pentru abonamentul eco360 al
         <strong th:text="${clientName}">Firma SRL</strong> era scadentă pe <span th:text="${dueDate}">27.10.2026</span>
         și nu vedem încă plata. Dacă ai plătit deja, poți ignora mesajul: plata ajunge la noi în una-două zile lucrătoare.
     </p>
@@ -60,7 +59,7 @@
         să fie legată de ea.
     </p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
-    <p style="font-size: 12px; color: #9ca3af;">WasteHouse — evidența și raportarea gestiunii deșeurilor.</p>
+    <p style="font-size: 12px; color: #9ca3af;">eco360 — evidența și raportarea gestiunii deșeurilor.</p>
 </div>
 </body>
 </html>

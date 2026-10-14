@@ -383,7 +383,7 @@ class DepotReportIT {
             var reader = new com.lowagie.text.pdf.PdfReader(pdf);
             String text = new com.lowagie.text.pdf.parser.PdfTextExtractor(reader).getTextFromPage(1);
             reader.close();
-            assertThat(text).as(kind.name()).contains("WasteHouse");
+            assertThat(text).as(kind.name()).contains("eco360");
         }
         assertThat(rowsContaining(xlsx(DepotReportKind.CANCELLED, null, null, null), "Nimic în perioadă")).hasSize(1);
     }

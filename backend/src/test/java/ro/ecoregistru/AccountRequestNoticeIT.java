@@ -2,12 +2,15 @@ package ro.ecoregistru;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import jakarta.mail.Message;
+import jakarta.mail.Multipart;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -45,6 +48,7 @@ class AccountRequestNoticeIT {
 
     @Autowired MockMvc mockMvc;
     @Autowired AccountRequestRepository accountRequestRepository;
+    @Value("${app.frontend-base-url}") String frontendBaseUrl;
 
     @MockitoBean JavaMailSender mailSender;
 
@@ -65,6 +69,30 @@ class AccountRequestNoticeIT {
         assertThat(message.getRecipients(Message.RecipientType.TO)).extracting(Object::toString)
                 .containsExactly("contact@wastehouse.ro");
         assertThat(message.getSubject()).contains("Tamplaria Noua SRL");
+    }
+
+    /** 14.10.2026 — aplicația se cheamă eco360: expeditorul și logoul din cap, luat de lângă aplicația web. */
+    @Test
+    void theMailIsSignedEco360WithItsLogo() throws Exception {
+        mockMvc.perform(submission("Sigla Noua SRL", "RO" + TestCui.random(), null)).andExpect(status().isAccepted());
+
+        ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
+        Mockito.verify(mailSender).send(captor.capture());
+        MimeMessage message = captor.getValue();
+        assertThat(((InternetAddress) message.getFrom()[0]).getPersonal()).isEqualTo("eco360");
+        assertThat(html(message.getContent()))
+                .contains("<img src=\"" + frontendBaseUrl + "/brand/eco360-mail.png\"")
+                .contains("alt=\"eco360\"")
+                .doesNotContain("WasteHouse").doesNotContain("wastehouse-mark");
+    }
+
+    /** Textul HTML din mailul construit de {@code MimeMessageHelper} (multipart în multipart). */
+    private static String html(Object content) throws Exception {
+        if (content instanceof String text) return text;
+        Multipart multipart = (Multipart) content;
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < multipart.getCount(); i++) out.append(html(multipart.getBodyPart(i).getContent()));
+        return out.toString();
     }
 
     @Test

@@ -315,7 +315,7 @@ public class CardPaymentService {
                 .updatedAt(now)
                 .build());
         String number = invoice.getFgoSerie() + " " + invoice.getFgoNumar();
-        return new Order(p.getId(), p.getOrderId(), invoice.getTotal(), "Factura " + number + " - abonament WasteHouse",
+        return new Order(p.getId(), p.getOrderId(), invoice.getTotal(), "Factura " + number + " - abonament eco360",
                 billing(invoice.getSubscription()), token);
     }
 
