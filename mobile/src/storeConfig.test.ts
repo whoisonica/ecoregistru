@@ -29,7 +29,7 @@ test("fiecare cerere de permisiune pe iPhone e scrisă de noi, în română", ()
     if (!key.endsWith("UsageDescription")) continue;
     // Al clientului de dezvoltare: faza „Strip Local Network Keys for Release” îl scoate din build-ul de producție.
     if (key === "NSLocalNetworkUsageDescription" && String(text).startsWith("Expo Dev Launcher")) continue;
-    assert.match(String(text), /^WasteHouse /, `${key}: ${text}`);
+    assert.match(String(text), /^eco360 /, `${key}: ${text}`);
   }
 });
 

@@ -204,7 +204,7 @@ function findDocumentNumber(lines: string[]): Read<string> | undefined {
         series && !number.toUpperCase().startsWith(series.toUpperCase()) ? `${series.toUpperCase()} ${number}` : number;
       return { value: value.toUpperCase(), source: line };
     }
-    // „Serie / număr aviz” cu valoarea pe rândul următor, cum îl tipărește chiar WasteHouse.
+    // „Serie / număr aviz” cu valoarea pe rândul următor, cum îl tipărește chiar eco360.
     if (/(seri[ae]|nr|num[aă]r)/i.test(line) && /aviz/i.test(line) && !/\d/.test(line)) {
       const next = lines[i + 1];
       if (next && /^[A-Z]{0,6}[- ]?\d{1,10}$/i.test(next))

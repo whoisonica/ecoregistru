@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "WasteHouse",
+    "name": "eco360",
     "slug": "wastehouse",
     "scheme": "wastehouse",
     "version": "0.1.0",
@@ -103,8 +103,8 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "WasteHouse pozează avizul ca să citească din el predarea. Poza rămâne dovada predării.",
-          "photosPermission": "WasteHouse ia din galerie poza unui aviz, ca să citească din ea predarea.",
+          "cameraPermission": "eco360 pozează avizul ca să citească din el predarea. Poza rămâne dovada predării.",
+          "photosPermission": "eco360 ia din galerie poza unui aviz, ca să citească din ea predarea.",
           "microphonePermission": false
         }
       ],

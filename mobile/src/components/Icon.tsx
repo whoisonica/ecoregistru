@@ -1,3 +1,4 @@
+import { logoSvg } from "@web/brandLogo";
 import { SvgXml } from "react-native-svg";
 
 // Desenele din prototipul aprobat (`const I` în wastehouse-mobil-prototip.html), toate pe 24×24, cu contur.
@@ -46,12 +47,14 @@ export function Icon({ name, size = 24, color, strokeWidth = 1.8 }: {
   return <SvgXml xml={xml} width={size} height={size} />;
 }
 
+const LOGO = logoSvg(false);
+const LOGO_ON_DARK = logoSvg(true);
+
 /**
- * Semnul WasteHouse — „bucla-casă”, alb pe #047857 (proprietarul, 15.09.2026: „peste tot, același logo”);
- * același path ca `frontend/src/components/BrandName.tsx` și iconițele din `assets/`.
+ * Logoul eco360 (14.10.2026), același desen ca `frontend/src/components/BrandName.tsx`: vine din
+ * `frontend/src/lib/brandLogo.ts` (proprietarul, 15.09.2026: „peste tot, același logo”). `onDark` pune literele
+ * albe, pentru fundalul grafit. Iconițele din `assets/` sunt făcute din aceleași fișiere ale logoului.
  */
-export function Logo({ size = 20 }: { size?: number }) {
-  const xml =
-    '<svg viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#047857"/><path d="M11.5 23.5H7V13L16 5l9 8v10.5h-7.5M21 20l-3.5 3.5L21 27" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  return <SvgXml xml={xml} width={size} height={size} />;
+export function Logo({ size = 20, onDark = false }: { size?: number; onDark?: boolean }) {
+  return <SvgXml xml={onDark ? LOGO_ON_DARK : LOGO} width={size} height={size} />;
 }

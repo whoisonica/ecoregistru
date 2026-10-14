@@ -96,7 +96,7 @@ test("9. prețul pe kilogram nu e cantitatea", () => {
   assert.equal(r.quantity?.source, "Cantitate 900 kg");
 });
 
-test("10. avizul tipărit de WasteHouse: „Serie / număr aviz” cu valoarea pe rândul următor", () => {
+test("10. avizul tipărit de eco360: „Serie / număr aviz” cu valoarea pe rândul următor", () => {
   const r = parseAviz(
     [
       "AVIZ DE ÎNSOȚIRE A MĂRFII",

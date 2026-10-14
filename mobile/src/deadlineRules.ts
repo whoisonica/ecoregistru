@@ -22,7 +22,7 @@ export function deadlineEvent(d: Pick<Deadline, "dueDate">, label: string) {
     startDate: start,
     endDate: start,
     allDay: true,
-    notes: "WasteHouse",
+    notes: "eco360",
     // Evenimentul e de o zi întreagă (de la miezul nopții): memento la 9 dimineața, cu trei zile înainte.
     alarms: [{ relativeOffset: -3 * 24 * 60 + 9 * 60 }],
   };

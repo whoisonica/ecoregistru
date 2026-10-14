@@ -47,10 +47,10 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
-            <LinearGradient colors={["#2F3833", "#1A201C"]} style={styles.logo}>
-              <Logo size={30} />
-            </LinearGradient>
-            <Text style={styles.appName}>{strings.appName}</Text>
+            {/* Numele e chiar în logo („ECO” peste „360”), deci nu se mai scrie sub el. */}
+            <View style={styles.logo} accessible accessibilityRole="image" accessibilityLabel={strings.appName}>
+              <Logo size={88} onDark />
+            </View>
             <Text style={styles.tagline}>{strings.tagline}</Text>
           </View>
 
@@ -98,17 +98,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   content: { paddingHorizontal: 18, gap: 28 },
   brand: { alignItems: "center", gap: 6 },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.14)",
-  },
-  appName: { fontFamily: fonts.sansSemiBold, fontSize: 30, color: "#fff", letterSpacing: -0.5 },
+  logo: { marginBottom: 8 },
   tagline: { fontFamily: fonts.sans, fontSize: 14.5, color: colors.onDark2, textAlign: "center" },
   card: { backgroundColor: colors.ground, borderRadius: radius.sheet, padding: 18, gap: 6 },
   cardTitle: { fontFamily: fonts.sansSemiBold, fontSize: 20, color: colors.ink, marginBottom: 6 },
