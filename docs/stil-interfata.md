@@ -57,7 +57,7 @@ unsprezece, iar până la primul rând de meniu stăteau cinci blocuri.*
 
 `components/panel/*`, orchestrate de `Layout.tsx`. De sus în jos:
 
-1. Logo, **căutarea ca iconiță** (paleta, Ctrl K) și tasta `[` (strânge la o șină de iconițe; ținută în
+1. Logoul eco360 cu literele albe (`BrandName onDark`), **căutarea ca iconiță** (paleta, Ctrl K) și tasta `[` (strânge la o șină de iconițe; ținută în
    `localStorage`, cu try/catch).
 2. **Firma, pe plăcuța ei** (`CompanyLabel`, fond `bg-lcd`): nume, `CUI · tip` în mono. La consultant și platformă e
    buton → popover cu căutare, grupat „Cer atenție” (cu motivul) și „În regulă · N”.
@@ -145,7 +145,7 @@ stilul panoului (LCD, taste, bon) fuseseră respinse: pe login și pe cerere nu 
 plină din machetă a fost și ea respinsă în aceeași seară („prea deranjantă”; „culorile din landing îmi plac”).*
 
 `components/PublicShell.tsx`, folosit de login și de cererea de cont. **Stânga, pe hârtie deschisă**
-(`surface-muted`, linie subțire spre dreapta): semnul, rândul mic verde cu linie de pe landing
+(`surface-muted`, linie subțire spre dreapta): logoul eco360 (`BrandName`, literele verzi), rândul mic verde cu linie de pe landing
 (`strings.publicKicker`), un titlu mare negru (700, spațiere −0,03em; 56px pe login, 44px pe cerere) cu **ultima
 frază în verdele adânc al mărcii** (`text-mark`, ca „Fără să le mai ții minte.” de pe landing), o propoziție, apoi
 ce vrea pagina să arate — pe login trei tile-uri albe cu ecrane care chiar există (Anexa 1, 15 martie, Dosarul de

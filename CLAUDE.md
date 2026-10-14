@@ -1,4 +1,8 @@
-# Reguli pentru sesiunile de lucru pe WasteHouse
+# Reguli pentru sesiunile de lucru pe eco360
+
+*Aplicația se cheamă eco360 din 14.10.2026 (mereu cu litere mici; „ECO360” doar în etichetele cu majuscule), ca parte a
+mărcii WasteHouse. Numele de cod și infrastructura rămân `ecoregistru` (pachetul Java, Heroku, repo-ul), iar landingul
+rămâne wastehouse.ro.*
 
 - **Interfața urmează direcția „Cântar”: [`docs/stil-interfata.md`](docs/stil-interfata.md).** Panou grafit cu taste,
   pagină albă, IBM Plex Sans + Mono, colțuri mici, nicio umbră, stări ca LED (pătrățel + cuvânt), pubela pe codul de

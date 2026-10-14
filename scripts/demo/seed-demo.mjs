@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Conturile demo WasteHouse (plan-curatenie-prod-demo.md, Faza 3): o firmă generator cu un an de date și o firmă
+// Conturile demo eco360 (plan-curatenie-prod-demo.md, Faza 3): o firmă generator cu un an de date și o firmă
 // de consultanță cu trei firme. Totul trece prin API-ul aplicației, ca un om la tastatură: validările, termenele și
 // jurnalul de audit ies ca la un client real, iar un endpoint schimbat face scriptul să cadă vizibil.
 //

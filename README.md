@@ -1,6 +1,6 @@
-# WasteHouse
+# eco360
 
-*Formerly EcoRegistru. The app runs at [app.wastehouse.ro](https://app.wastehouse.ro), the product page at [wastehouse.ro](https://wastehouse.ro). The Java package `ro.ecoregistru`, the Heroku apps and this repository keep the old name on purpose: none of them reach a client, and renaming them would touch applied migrations and the deploy pipeline for no visible gain.*
+*Part of the WasteHouse brand; formerly WasteHouse (the app, until 14.10.2026) and EcoRegistru. The app moves to [www.eco360.ro](https://www.eco360.ro) (until then [app.wastehouse.ro](https://app.wastehouse.ro)); the product page stays at [wastehouse.ro](https://wastehouse.ro). The code name `ecoregistru` (Java package `ro.ecoregistru`, the Heroku apps, this repository) and the mobile identifiers (`ro.wastehouse.app`, the Expo slug, Firebase) keep their old names on purpose: none of them reach a client, and renaming them would touch applied migrations and the deploy pipeline for no visible gain.*
 
 Multi-tenant compliance SaaS for waste management in Romania: monthly waste records,
 preparation of the mandatory SIM/AFM reports, deadline alerts, and one-click generation
