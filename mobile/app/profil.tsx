@@ -15,7 +15,7 @@ import { useSession } from "../src/session";
 import { colors, fonts } from "../src/theme";
 
 const m = strings.mobile;
-const POLICY_URL = "https://www.eco360.ro/confidentialitate";
+const POLICY_URL = "https://app.eco360.ro/confidentialitate";
 
 /**
  * Profil (27.09.2026): tot ce era pe Acasă și nu era despre azi — contul, firma (comutatorul, la

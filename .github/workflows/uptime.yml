@@ -6,8 +6,8 @@
 #
 #   1. API-ul: `/actuator/health` trebuie să spună `UP` (indicatorul de mail e oprit dinadins, vezi
 #      `application.yml`, deci `DOWN` înseamnă baza sau aplicația, nu furnizorul de mail);
-#   2. aplicația web `www.eco360.ro` (din 15.10.2026; `app.wastehouse.ro` o trimite acolo din bundle): 200 și pagina care încarcă bundle-ul;
-#   3. landingul `wastehouse.ro`: 200.
+#   2. aplicația web `app.eco360.ro` (din 15.10.2026; `app.wastehouse.ro` și `www.eco360.ro` o trimit acolo din bundle): 200 și pagina care încarcă bundle-ul;
+#   3. landingurile `wastehouse.ro` și `eco360.ro`: 200.
 #
 # Când o rulare cade, GitHub trimite mail celui care a modificat ultimul programarea (Settings →
 # Notifications → Actions → „Send notifications for failed workflows only”). Programarea GitHub nu e exactă
@@ -45,10 +45,13 @@ jobs:
           # la prima potrivire, deci `echo` primește SIGPIPE și pasul cade pe o pagină bună (16.09.2026).
           grep -q '"status":"UP"' <<< "$body"
 
-      - name: Aplicația web — www.eco360.ro
+      - name: Aplicația web — app.eco360.ro
         run: |
-          html=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 https://www.eco360.ro/)
+          html=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 https://app.eco360.ro/)
           grep -q '/assets/index-' <<< "$html" || { echo "pagina nu încarcă bundle-ul"; exit 1; }
 
       - name: Landingul — wastehouse.ro
         run: curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 -o /dev/null https://wastehouse.ro/
+
+      - name: Landingul — eco360.ro
+        run: curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 -o /dev/null https://eco360.ro/

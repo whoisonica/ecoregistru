@@ -30,7 +30,7 @@ import { fetchWithTimeout } from "./timeout";
  * Mac-ul se vede la altă adresă —, sau IP-ul Mac-ului în rețea pentru un telefon adevărat. Expo citește
  * variabilele `EXPO_PUBLIC_*` la pornirea lui Metro, deci schimbarea cere o repornire a bundler-ului.
  *
- * <p>API-ul n-are domeniu propriu; `app.wastehouse.ro` (după mutare, `www.eco360.ro`) e frontendul, nu el.
+ * <p>API-ul n-are domeniu propriu; `app.wastehouse.ro` (după mutare, `app.eco360.ro`) e frontendul, nu el.
  */
 const PRODUCTION_URL = "https://ecoregistru-api-5ba7c1d5e3e3.herokuapp.com";
 
