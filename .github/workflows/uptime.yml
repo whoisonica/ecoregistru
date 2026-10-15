@@ -6,7 +6,7 @@
 #
 #   1. API-ul: `/actuator/health` trebuie să spună `UP` (indicatorul de mail e oprit dinadins, vezi
 #      `application.yml`, deci `DOWN` înseamnă baza sau aplicația, nu furnizorul de mail);
-#   2. aplicația web `app.wastehouse.ro`: 200 și pagina care încarcă bundle-ul;
+#   2. aplicația web `www.eco360.ro` (din 15.10.2026; `app.wastehouse.ro` o trimite acolo din bundle): 200 și pagina care încarcă bundle-ul;
 #   3. landingul `wastehouse.ro`: 200.
 #
 # Când o rulare cade, GitHub trimite mail celui care a modificat ultimul programarea (Settings →
@@ -45,9 +45,9 @@ jobs:
           # la prima potrivire, deci `echo` primește SIGPIPE și pasul cade pe o pagină bună (16.09.2026).
           grep -q '"status":"UP"' <<< "$body"
 
-      - name: Aplicația web — app.wastehouse.ro
+      - name: Aplicația web — www.eco360.ro
         run: |
-          html=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 https://app.wastehouse.ro/)
+          html=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 https://www.eco360.ro/)
           grep -q '/assets/index-' <<< "$html" || { echo "pagina nu încarcă bundle-ul"; exit 1; }
 
       - name: Landingul — wastehouse.ro
