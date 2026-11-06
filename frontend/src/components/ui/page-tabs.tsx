@@ -48,6 +48,7 @@ export function PageTabs({
             type="button"
             role="tab"
             aria-selected={isSelected}
+            data-tour={item.id ? `tab-${item.id}` : undefined}
             onClick={() => onSelect(item.id)}
             className={
               "-mb-px inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium " +

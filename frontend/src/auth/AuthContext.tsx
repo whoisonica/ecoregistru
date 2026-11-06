@@ -12,6 +12,11 @@ export interface AuthUser {
   tenantName: string | null;
   /** P2.13 — firma de consultanță a unui consultant; lipsește la sesiunile salvate înainte de el. */
   consultancyName?: string | null;
+  /**
+   * Turul aplicației (06.11.2026): `false` = omul n-a văzut turul, deci pornește singur la intrare
+   * (`lib/tour.ts`, `shouldAutoStart`). Lipsește la sesiunile salvate înainte de tur: înseamnă „văzut”.
+   */
+  tourSeen?: boolean;
 }
 
 interface AuthContextValue {
@@ -27,6 +32,12 @@ interface AuthContextValue {
   switchTenant: (id: string | null) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  /**
+   * Turul s-a încheiat (gata sau sărit): `tourSeen` devine `true` aici și în sesiunea salvată, iar
+   * serverul află fără să fie așteptat. O cerere căzută nu oprește nimic: cel mult turul mai pornește
+   * o dată, la următorul login.
+   */
+  markTourSeen: () => void;
 }
 
 interface AuthResponse {
@@ -36,6 +47,7 @@ interface AuthResponse {
   tenantName: string | null;
   consultancyName: string | null;
   email: string;
+  tourSeen: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -65,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tenantId: data.tenantId,
       tenantName: data.tenantName,
       consultancyName: data.consultancyName,
+      tourSeen: data.tourSeen,
     };
     userStore.set(JSON.stringify(authUser));
     // Cache-ul e al contului de dinainte: lista de firme a platformei rămânea în selectorul unui
@@ -114,8 +127,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTenantId(null);
   }
 
+  function markTourSeen() {
+    if (user && user.tourSeen !== true) {
+      const seen: AuthUser = { ...user, tourSeen: true };
+      try {
+        userStore.set(JSON.stringify(seen));
+      } catch {
+        // Fără `localStorage` (fereastră privată plină): starea din memorie ajunge până la reîncărcare.
+      }
+      setUser(seen);
+    }
+    if (user) api.post("/api/v1/users/me/tour-seen").catch(() => {});
+  }
+
   const value = useMemo(
-    () => ({ user, loading, tenantId, switchTenant, login, logout }),
+    () => ({ user, loading, tenantId, switchTenant, login, logout, markTourSeen }),
     [user, loading, tenantId]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

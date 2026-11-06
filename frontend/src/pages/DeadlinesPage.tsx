@@ -214,7 +214,7 @@ export function DeadlinesPage() {
       <PageTabs tabs={tabs} selected={tab} onSelect={setTab} label={t.tabsLabel} />
 
       {tab === "" && (
-      <section className="mt-6" data-testid="deadlines-todo">
+      <section className="mt-6" data-testid="deadlines-todo" data-tour="deadlines-todo">
         <DeadlinesTable
           rows={todo}
           loading={upcoming.isLoading}

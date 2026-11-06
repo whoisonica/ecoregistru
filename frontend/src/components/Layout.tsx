@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Compass, Menu } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { canManage as roleCanManage } from "@/lib/roles";
 import { useBillingAccess, useCanWrite } from "@/hooks/useBillingAccess";
@@ -14,7 +14,9 @@ import {
   CommandPalette,
   useActionCommands,
   useNavigationCommands,
+  type Command,
 } from "@/components/CommandPalette";
+import { useTour } from "@/components/tour/TourProvider";
 import { useHotkey } from "@/hooks/useHotkey";
 import { Panel } from "@/components/panel/Panel";
 import { MobileBar } from "@/components/panel/MobileBar";
@@ -62,11 +64,13 @@ export function Layout({ children }: { children: ReactNode }) {
   const manages = roleCanManage(user?.role);
   const { data: billing } = useBillingAccess();
   const nav = useMemo(() => buildNav(user?.role, company?.type), [user?.role, company?.type]);
+  const tour = useTour();
 
-  // O navigare închide sertarul: altfel rămâne peste pagina pe care tocmai ai cerut-o.
+  // O navigare închide sertarul: altfel rămâne peste pagina pe care tocmai ai cerut-o. La fel turul,
+  // pornit din meniul contului de pe telefon (care stă în sertar): altfel sertarul acoperă ținta.
   useEffect(() => {
     setNavOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, tour.active]);
 
   // Escape îl închide, ca la orice strat care acoperă pagina.
   useEffect(() => {
@@ -98,7 +102,27 @@ export function Layout({ children }: { children: ReactNode }) {
   // Locurile întâi, apoi ce se poate începe: „unde ajung" e întrebarea de zece ori mai deasă.
   const navCommands = useNavigationCommands(nav);
   const actionCommands = useActionCommands(writable && Boolean(company), screens);
-  const commands = useMemo(() => [...navCommands, ...actionCommands], [navCommands, actionCommands]);
+  // Turul, ultimul între acțiuni: se caută după „tur”, „ajutor”, „cum folosesc”.
+  const tourCommands = useMemo<Command[]>(
+    () =>
+      tour.available
+        ? [
+            {
+              id: "action:tour",
+              label: strings.tour.paletteLabel,
+              keywords: strings.tour.paletteKeywords,
+              group: strings.common.actionsGroup,
+              icon: Compass,
+              run: tour.start,
+            },
+          ]
+        : [],
+    [tour.available, tour.start]
+  );
+  const commands = useMemo(
+    () => [...navCommands, ...actionCommands, ...tourCommands],
+    [navCommands, actionCommands, tourCommands]
+  );
 
   /**
    * `/` duce în caseta de căutare a ecranului curent, oriunde ar fi ea. Legătura se face prin DOM

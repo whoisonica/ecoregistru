@@ -3,6 +3,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute, RequireTenant } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
+import { TourProvider } from "@/components/tour/TourProvider";
 import { LoginPage } from "@/pages/LoginPage";
 import { AccountRequestPage } from "@/pages/AccountRequestPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
@@ -42,14 +43,17 @@ function AppShell({
   const location = useLocation();
   return (
     <ProtectedRoute>
-      <Layout>
-        {/* Plasa e **înăuntrul** lui `Layout`: o excepție într-o pagină lasă în picioare antetul
-            și meniul, deci se poate merge în altă parte fără reîncărcare. Cheia e adresa, ca
-            plecarea de pe ecranul căzut să șteargă mesajul. */}
-        <ErrorBoundary resetKey={location.pathname}>
-          {needsTenant ? <RequireTenant>{children}</RequireTenant> : children}
-        </ErrorBoundary>
-      </Layout>
+      {/* Turul aplicației stă deasupra lui `Layout`: paleta lui și meniul contului din panou îl pornesc. */}
+      <TourProvider>
+        <Layout>
+          {/* Plasa e **înăuntrul** lui `Layout`: o excepție într-o pagină lasă în picioare antetul
+              și meniul, deci se poate merge în altă parte fără reîncărcare. Cheia e adresa, ca
+              plecarea de pe ecranul căzut să șteargă mesajul. */}
+          <ErrorBoundary resetKey={location.pathname}>
+            {needsTenant ? <RequireTenant>{children}</RequireTenant> : children}
+          </ErrorBoundary>
+        </Layout>
+      </TourProvider>
     </ProtectedRoute>
   );
 }

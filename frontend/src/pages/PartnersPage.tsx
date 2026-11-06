@@ -342,7 +342,7 @@ export function PartnersPage() {
         <NaturalPersonsSection canManage={Boolean(canManage || canWeigh)} />
       ) : (
       <>
-      <section className={hasDepot ? "mt-4" : "mt-6"}>
+      <section className={hasDepot ? "mt-4" : "mt-6"} data-tour="partners-list">
         {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
         {!isError && (

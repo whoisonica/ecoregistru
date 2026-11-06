@@ -435,6 +435,7 @@ export function AuditFilePage() {
             </Select>
           </div>
           <Button
+            data-tour="audit-download"
             onClick={handleDownload}
             loading={downloading}
             disabled={weighingLoading}

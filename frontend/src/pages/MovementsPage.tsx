@@ -550,6 +550,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                 onClick={openCreate}
                 disabled={activeWorkPoints.length === 0}
                 hotkey={heading.key}
+                data-tour={isGeneration ? "add-waste" : undefined}
               >
                 <heading.icon className="mr-2 h-4 w-4" />
                 {heading.add}
@@ -773,7 +774,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
           )
         )}
       </div>
-      <section className="mt-4">
+      <section className="mt-4" data-tour="movements-list">
         {/* Un filtru pus din altă parte trebuie să se vadă și să se poată scoate de aici: altfel
             tabelul pare gol pe nedrept, iar omul caută rânduri care există. */}
         {onlyMissingCode && (

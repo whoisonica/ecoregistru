@@ -66,6 +66,7 @@ export function Panel({
       onClick={onOpenSearch}
       aria-label={`${t.searchEverywhere} (${t.searchKey})`}
       data-testid="panel-search"
+      data-tour="search"
       className={cn(
         "grid place-items-center rounded-md border border-panel-line text-panel-mid transition-colors hover:border-panel-key hover:text-panel-strong focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0",
         collapsed ? "h-9 w-full" : "h-7 w-7"
@@ -111,7 +112,7 @@ export function Panel({
       {collapsed && searchButton}
 
       <nav aria-label={strings.common.mainNav} className="-mx-1 flex-1 overflow-y-auto px-1">
-        <ul className="flex flex-col gap-px">
+        <ul className="flex flex-col gap-px" data-tour="nav">
           {nav.main.map((item) => (
             <NavRow
               key={item.to}

@@ -5085,4 +5085,52 @@ export const strings = {
     permitSaved: "Autorizația s-a salvat. Termenele s-au mutat.",
     permitError: "Autorizația nu s-a salvat.",
   },
+
+  /**
+   * Turul aplicației (06.11.2026): la prima intrare a unui client, câte o casetă pe fiecare ecran
+   * al generatorului. Pașii sunt în `lib/tour.ts`; aici numai textele. Fiecare text spune doar ce
+   * face aplicația azi (mailurile de la termene și autorizații, 30 iunie la energie), citit din cod.
+   */
+  tour: {
+    menuItem: "Turul aplicației",
+    paletteLabel: "Turul aplicației",
+    paletteKeywords: "tur ajutor cum folosesc ghid învăț prezentare început",
+    dialogLabel: "Turul aplicației",
+    progress: "{n} din {total}",
+    back: "Înapoi",
+    next: "Înainte",
+    skip: "Sari peste",
+    done: "Gata",
+    welcomeTitle: "Bun venit în eco360",
+    welcomeBody: "Îți arăt unde e fiecare lucru. Durează două minute și poți ieși oricând.",
+    navTitle: "Meniul",
+    navBody: "Fiecare ecran are o cifră. Apeși 2 și ajungi la Generare, fără mouse.",
+    firstStepsTitle: "Primii pași",
+    firstStepsBody: "Ce mai e de făcut până la primul document. Se bifează singuri pe măsură ce îi faci.",
+    movementsTitle: "Predările",
+    movementsBody: "Aici treci fiecare predare de deșeu: codul, câte kg și cui l-ai predat.",
+    movementsBodyViewer: "Aici vezi fiecare predare de deșeu: codul, câte kg și cui a fost predat.",
+    annualTitle: "Evidența pe an",
+    annualBody: "Se face singură din predări. De aici descarci fișa de evidență (Anexa 1, HG 856/2002).",
+    packagingTitle: "Ambalajele",
+    packagingBody: "Anexa 1 Ambalaje se adună singură din predările pe coduri 15 01.",
+    deadlinesTitle: "Termenele",
+    deadlinesBody: "Declarațiile cu termen legal ale firmei. Primești mail înainte de fiecare termen.",
+    energyTitle: "Energia",
+    energyBody: "Consumul de pe facturi, lună cu lună. Declarația anului se depune până pe 30 iunie.",
+    environmentalReportTitle: "Raportul de mediu",
+    environmentalReportBody: "Pentru firmele cu autorizație de mediu. Tabelele de deșeuri și ambalaje le pune aplicația.",
+    auditFileTitle: "Dosarul de control",
+    auditFileBody: "Când vine Garda de Mediu, descarci de aici tot dosarul într-o singură arhivă.",
+    partnersTitle: "Partenerii",
+    partnersBody:
+      "Firmele cărora le predai deșeul, cu autorizația lor de mediu. Primești mail cu 60 de zile înainte să expire.",
+    settingsTitle: "Setările",
+    settingsBody: "Punctele de lucru și colegii pe care îi inviți în cont.",
+    settingsBodyNoTeam: "Punctele de lucru ale firmei și cum arată aplicația.",
+    searchTitle: "Căutarea",
+    searchBody: "Apeși Ctrl K și găsești orice ecran după nume sau după document, de exemplu „anexa 1”.",
+    endTitle: "Asta e tot",
+    endBody: "Turul îl găsești oricând în meniul contului, jos în stânga.",
+  },
 } as const;

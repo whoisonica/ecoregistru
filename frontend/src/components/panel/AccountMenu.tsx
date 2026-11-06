@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronUp, Command, FileText, LogOut, ShieldCheck } from "lucide-react";
+import { ChevronUp, Command, Compass, FileText, LogOut, ShieldCheck } from "lucide-react";
+import { useTour } from "@/components/tour/TourProvider";
 import { Dialog } from "@/components/ui/dialog";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,7 @@ const t = strings.panel;
 
 /**
  * Contul, jos în panou: inițiala, adresa, rolul; la clic, meniul cu Termeni · Confidențialitate ·
- * Scurtături · Deconectare.
+ * Scurtături · Turul aplicației · Deconectare.
  *
  * <p>Cele două documente legale stăteau ca subsol în bară (`LegalFooter compact`), iar scurtăturile
  * ca un rând de text pe care nu-l citea nimeni. Aici sunt la un clic, nu în drum la fiecare privire.
@@ -31,6 +32,7 @@ export function AccountMenu({
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const tour = useTour();
 
   useEffect(() => {
     if (!open) return;
@@ -108,6 +110,21 @@ export function AccountMenu({
             <Command className="h-4 w-4 shrink-0 text-content-subtle" aria-hidden />
             {t.shortcuts}
           </button>
+          {tour.available && (
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="tour-start"
+              onClick={() => {
+                setOpen(false);
+                tour.start();
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-muted"
+            >
+              <Compass className="h-4 w-4 shrink-0 text-content-subtle" aria-hidden />
+              {strings.tour.menuItem}
+            </button>
+          )}
           <div className="my-1 border-t border-line" />
           <button
             type="button"

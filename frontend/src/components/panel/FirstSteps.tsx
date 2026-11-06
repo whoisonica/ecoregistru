@@ -103,7 +103,7 @@ export function FirstSteps() {
   const doneCount = steps.filter((s) => s.done).length;
 
   return (
-    <Card className="mt-4" data-testid="first-steps">
+    <Card className="mt-4" data-testid="first-steps" data-tour="first-steps">
       <CardHeader
         title={t.title}
         description={
