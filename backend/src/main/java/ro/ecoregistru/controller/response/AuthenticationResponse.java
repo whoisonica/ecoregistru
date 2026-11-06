@@ -21,5 +21,7 @@ public record AuthenticationResponse(
          */
         String refreshToken,
         /** G1 — care rând din „Dispozitive conectate” e telefonul ăsta. Null pentru web. */
-        UUID deviceSessionId
+        UUID deviceSessionId,
+        /** Turul aplicației: false până când omul îl termină sau îl sare ({@code AppUser#tourSeenAt}). */
+        boolean tourSeen
 ) {}

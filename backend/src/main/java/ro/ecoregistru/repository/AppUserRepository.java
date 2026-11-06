@@ -54,6 +54,17 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
      */
     long countByCompany_IdAndRoleAndEnabledTrue(UUID companyId, Role role);
 
+    /**
+     * The app tour was seen (V87). A bulk update on purpose: it goes around {@code AuditInterceptor}, so
+     * closing the tour does not leave a „Modificare" row in the firm's history, and the
+     * {@code IS NULL} keeps the first timestamp when the request comes twice (two tabs, a retry).
+     */
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("update AppUser u set u.tourSeenAt = :now where u.id = :id and u.tourSeenAt is null")
+    int markTourSeen(@org.springframework.data.repository.query.Param("id") UUID id,
+                     @org.springframework.data.repository.query.Param("now") java.time.Instant now);
+
     // --- D2.4: the depots of a restricted user (V69). Native: the join table has no entity. ---
 
     @Query(value = "select work_point_id from user_work_points where user_id = :userId", nativeQuery = true)

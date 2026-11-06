@@ -106,6 +106,14 @@ public class AppUser implements UserDetails {
     @Column(name = "all_work_points", nullable = false)
     boolean allWorkPoints = true;
 
+    /**
+     * When the person finished or skipped the app tour; null until then (V87). Per account, not per
+     * browser, so the tour does not come back on a new laptop. At runtime written only by
+     * {@code AppUserRepository#markTourSeen}, a bulk update that keeps it out of the audit log.
+     */
+    @Column(name = "tour_seen_at")
+    Instant tourSeenAt;
+
     @Column(nullable = false)
     Instant createdAt;
 

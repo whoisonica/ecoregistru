@@ -403,6 +403,7 @@ public class AuthenticationService {
                 .tenantName(user.getCompany() != null ? user.getCompany().getName() : null)
                 .consultancyName(user.getConsultancy() != null ? user.getConsultancy().getName() : null)
                 .email(user.getEmail())
+                .tourSeen(user.getTourSeenAt() != null)
                 .build();
     }
 

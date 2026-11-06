@@ -98,6 +98,7 @@ public class DevDataSeeder implements CommandLineRunner {
                 .firstName("Platform")
                 .lastName("Admin")
                 .enabled(true)
+                .tourSeenAt(Instant.now()) // like the demo accounts below, see user()
                 .createdAt(Instant.now())
                 .build());
 
@@ -504,6 +505,9 @@ public class DevDataSeeder implements CommandLineRunner {
                 .firstName(first)
                 .lastName(last)
                 .enabled(true)
+                // The seeded accounts are the ones the e2e suite and the screenshot scripts drive: a tour
+                // over every screen would break them. The tour has its own probe, which resets the column.
+                .tourSeenAt(Instant.now())
                 .createdAt(Instant.now())
                 .build();
     }

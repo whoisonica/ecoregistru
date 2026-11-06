@@ -31,8 +31,8 @@ import java.util.UUID;
  *       15.09.2026 across every controller; a client who has not paid still takes their records.</li>
  *   <li><b>Who pays decides.</b> A consultant, and a company of a consultancy, are restricted by the consultancy's
  *       subscription; a direct company by its own. A company nobody pays for is not restricted.</li>
- *   <li><b>Never</b> the platform, the login and reset endpoints, paying itself ({@code /api/v1/billing/**})
- *       or the two regenerations, which only recompute documents from records already there.</li>
+ *   <li><b>Never</b> the platform, the login and reset endpoints, paying itself ({@code /api/v1/billing/**}),
+ *       the two regenerations, which only recompute documents from records already there, or the tour flag.</li>
  *   <li><b>Off</b> unless {@code app.billing.read-only-enabled} (§9.6): the contract must say it first.</li>
  * </ul>
  *
@@ -47,8 +47,11 @@ public class SubscriptionAccessFilter extends OncePerRequestFilter {
 
     private static final Set<String> READS = Set.of("GET", "HEAD", "OPTIONS");
     private static final List<String> EXEMPT_PREFIXES = List.of("/api/v1/billing/", "/api/v1/auth/");
+    // The tour flag is about the person, not the firm's records: refused, the tour would come back at every
+    // sign-in of an account that can still read everything.
     private static final Set<String> EXEMPT_PATHS = Set.of(
-            "/api/v1/billing", "/api/v1/evidences/regenerate", "/api/v1/deadlines/regenerate");
+            "/api/v1/billing", "/api/v1/evidences/regenerate", "/api/v1/deadlines/regenerate",
+            "/api/v1/users/me/tour-seen");
 
     private final SubscriptionRepository subscriptionRepository;
     private final boolean enabled;

@@ -119,6 +119,10 @@ class BillingReadOnlyIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("READ_ONLY")))
                 .andExpect(jsonPath("$.readOnly", is(true)));
+        // Turul ține de om, nu de evidențele firmei: refuzat, ar fi revenit la fiecare intrare.
+        mockMvc.perform(post("/api/v1/users/me/tour-seen").header("Authorization", bearer(operator)))
+                .andExpect(status().isNoContent());
+        assertThat(appUserRepository.findById(operator.getId()).orElseThrow().getTourSeenAt()).isNotNull();
     }
 
     /** Platforma lucrează în continuare pe firmă: ea e cea care repară. */
