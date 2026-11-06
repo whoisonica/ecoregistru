@@ -61,6 +61,7 @@ const suites = [
   ["60-energie.mjs", "Energie: fișa, Termene, dosarul, Acasă"],
   ["61-raport-mediu.mjs", "Raportul anual de mediu: anul, controale, monitorizări, autorizația, Termene, Word"],
   ["62-teme.mjs", "Temele de culori: alegerea din Setări, reîncărcarea, login-ul în tema aleasă, 375px"],
+  ["63-tur.mjs", "Turul aplicației: pornirea la primul login, pașii pe ecrane, Gata/Sari peste/Esc, reluarea, vizualizatorul, 375px"],
 ];
 
 const only = process.argv[2];

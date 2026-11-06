@@ -78,12 +78,30 @@ export async function launch() {
  * O pagină care își ține minte tot ce a mers prost: erori de consolă, excepții
  * nerezolvate și răspunsuri HTTP de 400 în sus.
  */
-export async function newPage(browser, { width = 1440, height = 900 } = {}) {
+export async function newPage(browser, { width = 1440, height = 900, tour = false } = {}) {
   // `acceptDownloads`: fără el, un `page.waitForEvent("download")` nu se declanșează niciodată, iar
   // o probă care verifică o descărcare ar trece pe „nu s-a întâmplat nimic" — motivul greșit.
   const context = await browser.newContext({ viewport: { width, height }, acceptDownloads: true });
   const page = await context.newPage();
   page.problems = [];
+
+  // Turul aplicației (06.11.2026) pornește singur la prima intrare a unui cont, iar probele care creează
+  // conturi și intră cu ele (invitația, clientul nou) l-ar avea peste ecran. Răspunsul login-ului spune
+  // deci „văzut”, în afară de proba turului (63), care cere `tour: true`. Conturile demo le marchează
+  // seeder-ul; asta acoperă conturile făcute în timpul probelor.
+  if (!tour) {
+    await page.route("**/api/v1/auth/login", async (route) => {
+      const response = await route.fetch();
+      let body = await response.text();
+      try {
+        const json = JSON.parse(body);
+        if (json && typeof json === "object" && "tourSeen" in json) body = JSON.stringify({ ...json, tourSeen: true });
+      } catch {
+        // Nu e JSON (o eroare de rețea, o pagină de eroare): trece cum a venit.
+      }
+      await route.fulfill({ response, body });
+    });
+  }
 
   page.on("console", (msg) => {
     if (msg.type() !== "error" && msg.type() !== "warning") return;

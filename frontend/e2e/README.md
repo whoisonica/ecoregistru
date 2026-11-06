@@ -1,3 +1,20 @@
+🧭 **06.11.2026 — proba 63 (`63-tur.mjs`), turul aplicației**. La primul login al unui cont cu `app_users.tour_seen_at` gol (V87)
+turul pornește singur pe Acasă („Bun venit în eco360”, „1 din 14”) și trece prin ecranele generatorului: meniul, „Primii pași”,
+„Adaugă deșeuri”, tabul „Totalul anului”, tabul „Ambalaje”, Termene, Energie, Raport de mediu, Dosar de control, Parteneri, Setări,
+căutarea, final. Pe fiecare pas: ecranul lui, caseta în ecran, ținta `[data-tour="…"]` o singură dată, adusă în ecran și neacoperită
+de casetă. Sub tur cifra 2 nu deschide Generare; săgețile merg înainte și înapoi. „Gata” lasă omul pe Acasă și scrie coloana; după
+reîncărcare și la un login nou, din alt context, turul nu mai pornește. Se reia din meniul contului (`data-testid="tour-start"`) și din
+Ctrl K („tur”); Esc îl închide pe loc, pe ecranul unde era, iar „Sari peste” la fel. Cele trei teme (capturi la pasul predărilor);
+un client nou-nouț (firmă de generator goală, administrator invitat, parola pusă cu `psql`) are toți cei 14 pași, cu „Primii pași” al
+treilea și „Adaugă deșeuri” stins (fără punct de lucru); vizualizatorul n-are „Primii pași”, la predări citește „Aici vezi”, la Setări
+fără „colegii pe care îi inviți”; la 375×740 pașii meniului și ai căutării se sar („3 din 12” la predări), caseta stă jos, fără derulare
+laterală. Fără erori de consolă sau HTTP. Coloana se golește cu `psql` (`E2E_DB`): conturile demo o au plină din `DevDataSeeder`, iar
+`newPage` din `lib.mjs` trece răspunsul login-ului pe `tourSeen: true` pentru toate celelalte probe (cele care fac conturi și intră cu ele
+n-au turul peste ecran); proba 63 cere `newPage(browser, { tour: true })`. Rulată pe o stivă proprie (backend :8095 pe `eco_tur_0611`,
+bază nouă cu migrările până la V87; Vite :5181; `E2E_DB=eco_tur_0611`): 222 de verificări, trece toată. ⚠️ Lasă în urmă o firmă
+„Proba 63 Client nou <număr>” cu administratorul `tur63-<număr>@proba.ro`.
+**Negativă:** cu `POST /users/me/tour-seen` scos din `markTourSeen` (`AuthContext.tsx`) cad exact cele 8 verificări „în bază, turul e văzut” / „la un login nou nu mai pornește” (schimbare de probă, pusă la loc).
+
 🧭 **11.10.2026 — probele 19 și 57 aduse la zi după „Raport de mediu”**. **19:** firma cu depozit are acum unsprezece intrări în meniu, deci
 Setările poartă litera de rezervă „S” din `Layout.tsx`; proba cere „S” peste zece intrări și o cifră până la zece. **57:** RAM-ul și viza
 pe Termene împing rândul termenului propriu sub marginea ecranului la 1440×900; clicul pe „Mai multe acțiuni” derula singur pagina, iar
