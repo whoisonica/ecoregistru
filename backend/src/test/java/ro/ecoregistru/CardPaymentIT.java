@@ -89,7 +89,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureEmbeddedDatabase(provider = ZONKY)
 class CardPaymentIT {
 
-    static final LocalDate START = LocalDate.of(2026, 10, 17);
+    /**
+     * The next 17th from the real date, not a fixed day: the run issues the invoice with the real clock
+     * ({@code issuedAt = Instant.now()}), while the debit schedule counts from it on the simulated days. With
+     * {@code 2026-10-17} fixed, every simulated day fell before the real issue date once the calendar passed
+     * the end of October, and no debit was ever tried (06.11.2026). A 17th keeps every month long enough.
+     */
+    static final LocalDate START = next17th(LocalDate.now(BillingRunService.ZONE));
+
+    static LocalDate next17th(LocalDate today) {
+        LocalDate thisMonth = today.withDayOfMonth(17);
+        return today.isAfter(thisMonth) ? thisMonth.plusMonths(1) : thisMonth;
+    }
+
     static final String POS = "TEST-POS1-SIGN-ATUR-EXXX";
     static final KeyPair NETOPIA = rsa();
     static final String REMINDER_MAIL = "mail/billing_reminder";
@@ -184,7 +196,7 @@ class CardPaymentIT {
 
         when(netopia.start(any(), any(), any(), any(), any(), eq(token))).thenAnswer(inv -> new NetopiaClient.Started(
                 "ntp-" + suffix(), 3, null, "00", "Approved", token, "9900****5098", 12, 2030));
-        billing.run(LocalDate.of(2026, 11, 17));
+        billing.run(START.plusMonths(1));
 
         List<SubscriptionInvoice> invoices = invoiceRepository.findAllBySubscription_IdOrderByPeriodStartDesc(s.getId());
         assertThat(invoices).hasSize(2).first().satisfies(i -> {
